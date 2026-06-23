@@ -1,5 +1,4 @@
 const express = require('express');
-// jidNormalizedUser එක මෙතනට එකතු කරා ID එක ක්ලීන් කරන්න
 const { default: makeWASocket, useMultiFileAuthState, jidNormalizedUser } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
@@ -53,7 +52,7 @@ app.post('/api/pair', async (req, res) => {
                     });
 
                     setTimeout(() => {
-                        try { sock.end(); } catch(e){} // logout වෙනුවට end පාවිච්චි කරා Unlink වීම වැලැක්වීමට
+                        try { sock.end(); } catch(e){} 
                         if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { recursive: true, force: true });
                     }, 5000);
                 }
@@ -117,7 +116,7 @@ app.get('/api/qr/start', async (req, res) => {
                         const base64Session = Buffer.from(credsData).toString('base64');
                         const sessionId = `BABIYA-MD;;;${base64Session}`;
 
-                        // 💡 QR ලින්ක් එකෙන් එන සංකීර්ණ ID එක මෙතනින් සුපිරියටම ක්ලීන් කරනවා
+                        
                         const myJid = jidNormalizedUser(qrSock.user.id);
                         console.log(`[SENDING] Sending Session ID to: ${myJid}`);
 
@@ -126,7 +125,7 @@ app.get('/api/qr/start', async (req, res) => {
                         });
 
                         setTimeout(() => {
-                            try { qrSock.end(); } catch(e){} // 💡 logout() වෙනුවට end() දැම්මා. එතකොට Device එක Unlink වෙන්නේ නැහැ!
+                            try { qrSock.end(); } catch(e){} 
                             if (fs.existsSync(tempQrPath)) fs.rmSync(tempQrPath, { recursive: true, force: true });
                             qrStatus = 'idle';
                         }, 5000);
