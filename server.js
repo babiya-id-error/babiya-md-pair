@@ -1,5 +1,5 @@
 const express = require('express');
-const { default: makeWASocket, useMultiFileAuthState, jidNormalizedUser } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, jidNormalizedUser, Browsers, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
 const path = require('path');
@@ -16,65 +16,93 @@ let latestQrImage = null;
 let qrStatus = 'idle';
 
 // ==========================================
-// 1. PAIRING CODE METHOD
+// 1. PAIRING CODE METHOD (FIXED & AUTO-RECONNECT)
 // ==========================================
 app.post('/api/pair', async (req, res) => {
     let phone = req.body.number;
     if (!phone) return res.status(400).json({ error: 'Phone number required!' });
     phone = phone.replace(/[^0-9]/g, '');
 
-    const tempPath = path.join(__dirname, 'temp_pair_session');
-    if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { recursive: true, force: true });
+    // එක පාර සිය දෙනෙක් ආවත් ෆෝල්ඩර් පටලැවෙන්නේ නැති වෙන්න Unique ID එකක් දෙනවා
+    const uniqueId = Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const tempPath = path.join(__dirname, `temp_pair_${uniqueId}`);
 
-    try {
-        const { state, saveCreds } = await useMultiFileAuthState('temp_pair_session');
-        const sock = makeWASocket({
-            auth: state,
-            printQRInTerminal: false,
-            logger: pino({ level: 'silent' }),
-            browser: ["Ubuntu", "Chrome", "20.0.04"]
-        });
+    let isSaved = false;
 
-        sock.ev.on('creds.update', saveCreds);
-        sock.ev.on('connection.update', async (update) => {
-            const { connection } = update;
-            if (connection === 'open') {
-                const credsPath = path.join(tempPath, 'creds.json');
-                if (fs.existsSync(credsPath)) {
-                    const credsData = fs.readFileSync(credsPath, 'utf-8');
-                    const base64Session = Buffer.from(credsData).toString('base64');
-                    const sessionId = `BABIYA-MD;;;${base64Session}`;
+    async function startPairing() {
+        try {
+            const { state, saveCreds } = await useMultiFileAuthState(tempPath);
+            const sock = makeWASocket({
+                auth: state,
+                printQRInTerminal: false,
+                logger: pino({ level: 'silent' }),
+                browser: Browsers.ubuntu('Chrome') // 🔥 පැය දෙකෙන් ලොග් අවුට් වෙන ලෙඩේට ස්ථිර විසඳුම!
+            });
 
-                    // සාර්ථකව ක්ලීන් කරපු ජිඩ් (JID) එකට මැසේජ් එක යවනවා
-                    const myJid = jidNormalizedUser(sock.user.id);
-                    await sock.sendMessage(myJid, { 
-                        text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY!*\n\n*Your Session ID:*\n\n\`\`\`${sessionId}\`\`\`\n\nDo not share this code!`
-                    });
+            sock.ev.on('creds.update', saveCreds);
+            
+            sock.ev.on('connection.update', async (update) => {
+                const { connection, lastDisconnect } = update;
 
-                    setTimeout(() => {
-                        try { sock.end(); } catch(e){} 
-                        if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { recursive: true, force: true });
-                    }, 5000);
+                if (connection === 'open') {
+                    isSaved = true;
+                    const credsPath = path.join(tempPath, 'creds.json');
+                    if (fs.existsSync(credsPath)) {
+                        const credsData = fs.readFileSync(credsPath, 'utf-8');
+                        const base64Session = Buffer.from(credsData).toString('base64');
+                        const sessionId = `BABIYA-MD;;;${base64Session}`;
+
+                        const myJid = jidNormalizedUser(sock.user.id);
+                        await sock.sendMessage(myJid, { 
+                            text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY!*\n\n*Your Session ID:*\n\n\`\`\`${sessionId}\`\`\`\n\nDo not share this code!`
+                        });
+
+                        // සාර්ථක වුණාට පස්සේ ක්ලීන් කරලා වහලා දානවා
+                        setTimeout(() => {
+                            try { sock.end(); } catch(e){} 
+                            if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { recursive: true, force: true });
+                        }, 5000);
+                    }
                 }
-            }
-        });
 
-        setTimeout(async () => {
-            try {
-                const code = await sock.requestPairingCode(phone);
-                res.json({ code: code });
-            } catch (err) {
-                res.json({ error: 'WhatsApp Core Error. Try again.' });
-            }
-        }, 5000);
+                if (connection === 'close') {
+                    const statusCode = lastDisconnect?.error?.output?.statusCode;
+                    // කෝඩ් එක ගැහුවට පස්සේ වට්ස්ඇප් එකෙන් කනෙක්ෂන් එක රීසෙට් කරද්දී ආපහු ලොගින් එක කම්ප්ලීට් කරන්න මේක ඕනේ
+                    if (statusCode !== DisconnectReason.loggedOut && !isSaved) {
+                        console.log("[PAIRING] Reconnecting to finalize setup...");
+                        setTimeout(() => startPairing(), 2000);
+                    } else if (isSaved) {
+                        if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { recursive: true, force: true });
+                    }
+                }
+            });
 
-    } catch (e) {
-        res.status(500).json({ error: e.message });
+            // මුල්ම පාර විතරක් පයිරින් කෝඩ් එක ඉල්ලලා වෙබ් සයිට් එකට යවනවා
+            if (!fs.existsSync(path.join(tempPath, 'creds.json')) || !state.creds.me) {
+                setTimeout(async () => {
+                    try {
+                        const code = await sock.requestPairingCode(phone);
+                        if (!res.headersSent) {
+                            res.json({ code: code });
+                        }
+                    } catch (err) {
+                        if (!res.headersSent) {
+                            res.json({ error: 'WhatsApp Core Error. Try again.' });
+                        }
+                    }
+                }, 3000);
+            }
+
+        } catch (err) {
+            if (!res.headersSent) res.status(500).json({ error: err.message });
+        }
     }
+
+    startPairing();
 });
 
 // ==========================================
-// 2. QR CODE METHOD (FIXED)
+// 2. QR CODE METHOD (FIXED BROWSER LOGOUT)
 // ==========================================
 app.get('/api/qr/start', async (req, res) => {
     const tempQrPath = path.join(__dirname, 'temp_qr_session');
@@ -90,7 +118,7 @@ app.get('/api/qr/start', async (req, res) => {
                 auth: state,
                 printQRInTerminal: false,
                 logger: pino({ level: 'silent' }),
-                browser: ["Ubuntu", "Chrome", "20.0.04"] 
+                browser: Browsers.ubuntu('Chrome') // 🔥 QR එකටත් නිවැරදිම බ්‍රවුසර් ස්ට්‍රින්ග් එක දැම්මා
             });
 
             qrSock.ev.on('creds.update', saveCreds);
@@ -98,17 +126,12 @@ app.get('/api/qr/start', async (req, res) => {
             qrSock.ev.on('connection.update', async (update) => {
                 const { connection, qr, lastDisconnect } = update;
 
-                if (connection) {
-                    console.log(`[QR STATUS UPDATE]: Connection is ${connection}`);
-                }
-
                 if (qr) {
                     latestQrImage = await QRCode.toDataURL(qr);
                 }
 
                 if (connection === 'open') {
                     qrStatus = 'success';
-                    console.log("[SUCCESS] WhatsApp Connected Successfully!");
                     
                     const credsPath = path.join(tempQrPath, 'creds.json');
                     if (fs.existsSync(credsPath)) {
@@ -116,10 +139,7 @@ app.get('/api/qr/start', async (req, res) => {
                         const base64Session = Buffer.from(credsData).toString('base64');
                         const sessionId = `BABIYA-MD;;;${base64Session}`;
 
-                        
                         const myJid = jidNormalizedUser(qrSock.user.id);
-                        console.log(`[SENDING] Sending Session ID to: ${myJid}`);
-
                         await qrSock.sendMessage(myJid, { 
                             text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY (QR)!*\n\n*Your Session ID:*\n\n\`\`\`${sessionId}\`\`\`\n\nDo not share this code!`
                         });
@@ -134,21 +154,15 @@ app.get('/api/qr/start', async (req, res) => {
 
                 if (connection === 'close') {
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
-                    console.log(`[CLOSE] Connection closed. Status Code: ${statusCode}`);
-                    
                     if (statusCode === 401) {
                         qrStatus = 'error';
-                        console.log("[ERROR] Session expired or logged out (401).");
                     } else if (qrStatus !== 'success' && qrStatus !== 'idle') {
-                        console.log("[RECONNECTING] Reconnecting to complete login process...");
-                        setTimeout(() => {
-                            connectWhatsAppQR();
-                        }, 2000);
+                        setTimeout(() => connectWhatsAppQR(), 2000);
                     }
                 }
             });
         } catch (err) {
-            console.log("[SOCKET ERROR]: ", err.message);
+            console.log(err.message);
         }
     }
 
