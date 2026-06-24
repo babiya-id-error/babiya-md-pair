@@ -21,9 +21,9 @@ app.post('/pair', async (req, res) => {
 
     try {
         const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
-        let isCodeSent = false; // Pairing code එක එකපාරක් විතරක් යවන්න සෙට් කරන බූලියන් එකක්
+        let isCodeSent = false; 
 
-        // Socket එක රන් කරන්න වෙනම ෆන්ක්ෂන් එකක් හැදුවා Reconnect කරන්න ලේසි වෙන්න
+        // Socket එක රන් කරන ප්‍රධාන function එක
         async function startWhatsAppConnection() {
             const sock = makeWASocket({
                 auth: state,
@@ -34,7 +34,7 @@ app.post('/pair', async (req, res) => {
 
             sock.ev.on('creds.update', saveCreds);
 
-            // Pairing Code එක ජෙනරේට් කරලා API Response එක විදිහට යැවීම
+            // Pairing Code එක ජෙනරේට් කරලා වෙබ් එකට යැවීම
             if (!sock.authState.creds.me && !isCodeSent) {
                 setTimeout(async () => {
                     try {
@@ -49,7 +49,7 @@ app.post('/pair', async (req, res) => {
                             res.status(500).json({ error: "Failed to generate pairing code." });
                         }
                     }
-                }, 3000); // තත්පර 3ක ඩිලේ එකක් දුන්නා සොකට් එක රෙඩි වෙනකන්
+                }, 3000); 
             }
 
             sock.ev.on('connection.update', async (update) => {
@@ -65,13 +65,27 @@ app.post('/pair', async (req, res) => {
                         const base64Session = Buffer.from(credsData).toString('base64');
                         const sessionID = `BABIYA-MD;;;${base64Session}`;
 
-                        const successMsg = `*👑 BABIYA-MD SESSION GENERATED 👑*\n\n*⚠️ DO NOT SHARE THIS WITH ANYONE!*\n\n*Session ID:*\n\`\`\`${sessionID}\`\`\``;
-                        
-                        // තමන්ගේ නම්බර් එකට මැසේජ් එක යවනවා
-                        await sock.sendMessage(sock.user.id, { text: successMsg });
-                        console.log("[INFO] Session ID sent successfully!");
+                        // හරිම WhatsApp JID එක හදාගැනීම (Device ID කෑලි නැතුව කෙලින්ම තමන්ගේ නම්බර් එකට මැසේජ් යන්න)
+                        const targetJid = `${phoneNumber}@s.whatsapp.net`;
 
-                        // සෙෂන් එක යවලා ඉවර වෙලා සොකට් එක වහලා, තාවකාලික ෆයිල් මකනවා (සර්වර් එක ක්‍රැෂ් කරන්නේ නෑ)
+                        const warningMsg = `*👑 BABIYA-MD SESSION GENERATED 👑*\n\n*⚠️ DO NOT SHARE THIS WITH ANYONE!*`;
+                        
+                        try {
+                            // පළවෙනි මැසේජ් එක (Warning එක විතරක් යවනවා)
+                            await sock.sendMessage(targetJid, { text: warningMsg });
+                            
+                            // තත්පර 1ක පරතරයක් දෙනවා මැසේජ් මාරු නොවී පිළිවෙලට යන්න
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            
+                            // දෙවෙනි මැසේජ් එක (Session ID එක විතරක් - එක පාරක් ටැප් කරලා ලෙහෙසියෙන් කොපි කරගන්න)
+                            await sock.sendMessage(targetJid, { text: sessionID });
+                            
+                            console.log("[INFO] Messages sent separately and successfully to Yourself!");
+                        } catch (msgErr) {
+                            console.error("[ERROR] Failed to send messages:", msgErr);
+                        }
+
+                        // සොකට් එක වහලා, තාවකාලික ෆයිල් ක්ලියර් කිරීම
                         setTimeout(() => {
                             try {
                                 sock.ws.close(); 
@@ -84,25 +98,22 @@ app.post('/pair', async (req, res) => {
                     }
                 }
 
-                // 2. මැදදී කනෙක්ෂන් එක කැඩුනොත් (Close) -> මේක තමයි උඹට අඩු වෙලා තිබ්බේ!
+                // 2. මැදදී කනෙක්ෂන් එක කැඩුනොත් ආයේ ඔටෝ රීකනෙක්ට් වීම
                 if (connection === 'close') {
                     const reason = lastDisconnect?.error?.output?.statusCode;
                     const shouldReconnect = reason !== DisconnectReason.loggedOut;
                     
                     console.log(`[CONNECTION CLOSED] Reason Code: ${reason}. Reconnecting: ${shouldReconnect}`);
                     
-                    // ලොග් අවුට් වුණේ නැත්නම්, කනෙක්ෂන් එක බිඳ වැටුනොත් ආයේ ඔටෝ රීකනෙක්ට් වෙන්න කියනවා
                     if (shouldReconnect) {
                         startWhatsAppConnection();
                     } else {
-                        // වැරදි කෝඩ් එකක් ගහලා ලොග් අවුට් වුණොත් ෆෝල්ඩර් එක මකනවා
                         fs.removeSync(sessionDir);
                     }
                 }
             });
         }
 
-        // සොකට් එක ස්ටාර්ට් කරනවා
         startWhatsAppConnection();
 
     } catch (error) {
