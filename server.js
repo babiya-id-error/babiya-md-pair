@@ -1,5 +1,5 @@
 const express = require('express');
-const { default: makeWASocket, useMultiFileAuthState, jidNormalizedUser, Browsers, DisconnectReason } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, jidNormalizedUser, Browsers, DisconnectReason, BufferJSON } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
 const path = require('path');
@@ -16,7 +16,7 @@ let latestQrImage = null;
 let qrStatus = 'idle';
 
 // ==========================================
-// 1. PAIRING CODE METHOD (FIXED & AUTO-RECONNECT)
+// 1. PAIRING CODE METHOD (FIXED & MEMORY SYNC)
 // ==========================================
 app.post('/api/pair', async (req, res) => {
     let phone = req.body.number;
@@ -45,30 +45,27 @@ app.post('/api/pair', async (req, res) => {
 
                 if (connection === 'open') {
                     isSaved = true;
-                    const credsPath = path.join(tempPath, 'creds.json');
-                    if (fs.existsSync(credsPath)) {
-                        const credsData = fs.readFileSync(credsPath, 'utf-8');
-                        const base64Session = Buffer.from(credsData).toString('base64');
-                        const sessionId = `BABIYA-MD;;;${base64Session}`;
+                    
+                    // 🔥 FIXED: ෆයිල් කියවන්නේ නැතුව රැම් එකේ තියෙන ලයිව් ක්‍රෙඩෙන්ෂල්ස් BufferJSON හරහාම Base64 කරනවා
+                    const base64Session = Buffer.from(BufferJSON.stringify(state.creds)).toString('base64');
+                    const sessionId = `BABIYA-MD;;;${base64Session}`;
 
-                        // තමන්ගේම JID එක (Yourself)
-                        const myJid = jidNormalizedUser(sock.user.id);
+                    const myJid = jidNormalizedUser(sock.user.id);
 
-                        // 1. මුලින්ම කනෙක්ට් වුණු බව කියන මැසේජ් එක තමන්ටම යවනවා
-                        await sock.sendMessage(myJid, { 
-                            text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY!*\n\nDo not share this code!`
-                        });
+                    // 1. සාර්ථක බව පෙන්වන මැසේජ් එක
+                    await sock.sendMessage(myJid, { 
+                        text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY!*\n\nDo not share this code with anyone!`
+                    });
 
-                        // 2. ඊට පස්සේ වෙනමම මැසේජ් එකක් විදිහට Session ID එක විතරක්ම තමන්ටම යවනවා
-                        await sock.sendMessage(myJid, { 
-                            text: sessionId 
-                        });
+                    // 2. සෙශන් ID එක වෙනමම මැසේජ් එකක් ලෙස
+                    await sock.sendMessage(myJid, { 
+                        text: sessionId 
+                    });
 
-                        setTimeout(() => {
-                            try { sock.end(); } catch(e){} 
-                            if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { recursive: true, force: true });
-                        }, 5000);
-                    }
+                    setTimeout(() => {
+                        try { sock.end(); } catch(e){} 
+                        if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { recursive: true, force: true });
+                    }, 5000);
                 }
 
                 if (connection === 'close') {
@@ -106,7 +103,7 @@ app.post('/api/pair', async (req, res) => {
 });
 
 // ==========================================
-// 2. QR CODE METHOD (FIXED BROWSER LOGOUT)
+// 2. QR CODE METHOD (FIXED MEMORY SYNC)
 // ==========================================
 app.get('/api/qr/start', async (req, res) => {
     const tempQrPath = path.join(__dirname, 'temp_qr_session');
@@ -137,31 +134,25 @@ app.get('/api/qr/start', async (req, res) => {
                 if (connection === 'open') {
                     qrStatus = 'success';
                     
-                    const credsPath = path.join(tempQrPath, 'creds.json');
-                    if (fs.existsSync(credsPath)) {
-                        const credsData = fs.readFileSync(credsPath, 'utf-8');
-                        const base64Session = Buffer.from(credsData).toString('base64');
-                        const sessionId = `BABIYA-MD;;;${base64Session}`;
+                    // 🔥 FIXED: QR එකටත් රැම් එකෙන්ම කෙලින්ම BufferJSON හරහා කේතනය කරනවා
+                    const base64Session = Buffer.from(BufferJSON.stringify(state.creds)).toString('base64');
+                    const sessionId = `BABIYA-MD;;;${base64Session}`;
 
-                        // තමන්ගේම JID එක (Yourself)
-                        const myJid = jidNormalizedUser(qrSock.user.id);
+                    const myJid = jidNormalizedUser(qrSock.user.id);
 
-                        // 1. මුලින්ම කනෙක්ට් වුණු බව කියන මැසේජ් එක තමන්ටම යවනවා
-                        await qrSock.sendMessage(myJid, { 
-                            text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY (QR)!*\n\nDo not share this code!`
-                        });
+                    await qrSock.sendMessage(myJid, { 
+                        text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY (QR)!*\n\nDo not share this code!`
+                    });
 
-                        // 2. ඊට පස්සේ වෙනමම මැසේජ් එකක් විදිහට Session ID එක විතරක්ම තමන්ටම යවනවා
-                        await qrSock.sendMessage(myJid, { 
-                            text: sessionId 
-                        });
+                    await qrSock.sendMessage(myJid, { 
+                        text: sessionId 
+                    });
 
-                        setTimeout(() => {
-                            try { qrSock.end(); } catch(e){} 
-                            if (fs.existsSync(tempQrPath)) fs.rmSync(tempQrPath, { recursive: true, force: true });
-                            qrStatus = 'idle';
-                        }, 5000);
-                    }
+                    setTimeout(() => {
+                        try { qrSock.end(); } catch(e){} 
+                        if (fs.existsSync(tempQrPath)) fs.rmSync(tempQrPath, { recursive: true, force: true });
+                        qrStatus = 'idle';
+                    }, 5000);
                 }
 
                 if (connection === 'close') {
