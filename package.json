@@ -1,7 +1,7 @@
 {
-  "name": "babiya-md-pair-site",
+  "name": "babiya-md-pairing-site",
   "version": "1.0.0",
-  "description": "Pairing and QR code generator for Babiya MD",
+  "description": "WhatsApp Pairing Code Generator",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -10,7 +10,7 @@
     "@whiskeysockets/baileys": "^6.6.0",
     "express": "^4.19.2",
     "pino": "^9.1.0",
-    "qrcode": "^1.5.3",
+    "qrcode-terminal": "^0.12.0",
     "socket.io": "^4.7.5"
   }
 }
