@@ -1,5 +1,5 @@
 const express = require('express');
-const { default: makeWASocket, useMultiFileAuthState, jidNormalizedUser, Browsers, DisconnectReason, BufferJSON } = require('@whiskeysockets/baileys');
+const { default: makeWASocket, useMultiFileAuthState, jidNormalizedUser, Browsers, DisconnectReason } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const fs = require('fs');
 const path = require('path');
@@ -16,7 +16,7 @@ let latestQrImage = null;
 let qrStatus = 'idle';
 
 // ==========================================
-// 1. PAIRING CODE METHOD (FIXED & MEMORY SYNC)
+// 1. PAIRING CODE METHOD (FIXED DELAY)
 // ==========================================
 app.post('/api/pair', async (req, res) => {
     let phone = req.body.number;
@@ -35,7 +35,7 @@ app.post('/api/pair', async (req, res) => {
                 auth: state,
                 printQRInTerminal: false,
                 logger: pino({ level: 'silent' }),
-                browser: Browsers.ubuntu('Chrome')
+                browser: Browsers.ubuntu('Chrome') // 👈 බොට්ගේ එකට ගැලපෙන්න වෙනස් කරා
             });
 
             sock.ev.on('creds.update', saveCreds);
@@ -45,27 +45,38 @@ app.post('/api/pair', async (req, res) => {
 
                 if (connection === 'open') {
                     isSaved = true;
-                    
-                    // 🔥 FIXED: ෆයිල් කියවන්නේ නැතුව රැම් එකේ තියෙන ලයිව් ක්‍රෙඩෙන්ෂල්ස් BufferJSON හරහාම Base64 කරනවා
-                    const base64Session = Buffer.from(BufferJSON.stringify(state.creds)).toString('base64');
-                    const sessionId = `BABIYA-MD;;;${base64Session}`;
 
-                    const myJid = jidNormalizedUser(sock.user.id);
+                    // ⏳ තත්පර 2ක් ප්‍රමාද කරනවා කනෙක්ශන් එක ස්ටේබල් වෙලා මැසේජ් යවන්න ලෑස්ති වෙනකල්
+                    setTimeout(async () => {
+                        try {
+                            const credsPath = path.join(tempPath, 'creds.json');
+                            if (fs.existsSync(credsPath)) {
+                                const credsData = fs.readFileSync(credsPath, 'utf-8');
+                                const base64Session = Buffer.from(credsData).toString('base64');
+                                const sessionId = `BABIYA-MD;;;${base64Session}`;
 
-                    // 1. සාර්ථක බව පෙන්වන මැසේජ් එක
-                    await sock.sendMessage(myJid, { 
-                        text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY!*\n\nDo not share this code with anyone!`
-                    });
+                                const myJid = jidNormalizedUser(sock.user.id);
 
-                    // 2. සෙශන් ID එක වෙනමම මැසේජ් එකක් ලෙස
-                    await sock.sendMessage(myJid, { 
-                        text: sessionId 
-                    });
+                                // 1. සාර්ථක බව පෙන්වන මැසේජ් එක
+                                await sock.sendMessage(myJid, { 
+                                    text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY!*\n\nDo not share this code with anyone!`
+                                });
 
-                    setTimeout(() => {
-                        try { sock.end(); } catch(e){} 
-                        if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { recursive: true, force: true });
-                    }, 5000);
+                                // 2. සෙශන් ID එක
+                                await sock.sendMessage(myJid, { 
+                                    text: sessionId 
+                                });
+                            }
+                        } catch (msgErr) {
+                            console.error("Error sending message:", msgErr.message);
+                        } finally {
+                            // මැසේජ් ටික ගියාට පස්සේ සෙශන් එක වහලා ටෙම්ප් ෆයිල් මකනවා
+                            setTimeout(() => {
+                                try { sock.end(); } catch(e){} 
+                                if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { recursive: true, force: true });
+                            }, 3000);
+                        }
+                    }, 2000); // 👈 මෙන්න මේ තත්පර 2ක ප්‍රමාදය තමයි වැඩේ ගොඩදාන්නේ!
                 }
 
                 if (connection === 'close') {
@@ -103,7 +114,7 @@ app.post('/api/pair', async (req, res) => {
 });
 
 // ==========================================
-// 2. QR CODE METHOD (FIXED MEMORY SYNC)
+// 2. QR CODE METHOD (FIXED DELAY)
 // ==========================================
 app.get('/api/qr/start', async (req, res) => {
     const tempQrPath = path.join(__dirname, 'temp_qr_session');
@@ -134,25 +145,35 @@ app.get('/api/qr/start', async (req, res) => {
                 if (connection === 'open') {
                     qrStatus = 'success';
                     
-                    // 🔥 FIXED: QR එකටත් රැම් එකෙන්ම කෙලින්ම BufferJSON හරහා කේතනය කරනවා
-                    const base64Session = Buffer.from(BufferJSON.stringify(state.creds)).toString('base64');
-                    const sessionId = `BABIYA-MD;;;${base64Session}`;
+                    // ⏳ තත්පර 2ක ප්‍රමාදය QR එකටත් දානවා
+                    setTimeout(async () => {
+                        try {
+                            const credsPath = path.join(tempQrPath, 'creds.json');
+                            if (fs.existsSync(credsPath)) {
+                                const credsData = fs.readFileSync(credsPath, 'utf-8');
+                                const base64Session = Buffer.from(credsData).toString('base64');
+                                const sessionId = `BABIYA-MD;;;${base64Session}`;
 
-                    const myJid = jidNormalizedUser(qrSock.user.id);
+                                const myJid = jidNormalizedUser(qrSock.user.id);
 
-                    await qrSock.sendMessage(myJid, { 
-                        text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY (QR)!*\n\nDo not share this code!`
-                    });
+                                await qrSock.sendMessage(myJid, { 
+                                    text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY (QR)!*\n\nDo not share this code!`
+                                });
 
-                    await qrSock.sendMessage(myJid, { 
-                        text: sessionId 
-                    });
-
-                    setTimeout(() => {
-                        try { qrSock.end(); } catch(e){} 
-                        if (fs.existsSync(tempQrPath)) fs.rmSync(tempQrPath, { recursive: true, force: true });
-                        qrStatus = 'idle';
-                    }, 5000);
+                                await qrSock.sendMessage(myJid, { 
+                                    text: sessionId 
+                                });
+                            }
+                        } catch (msgErr) {
+                            console.error("Error sending QR message:", msgErr.message);
+                        } finally {
+                            setTimeout(() => {
+                                try { qrSock.end(); } catch(e){} 
+                                if (fs.existsSync(tempQrPath)) fs.rmSync(tempQrPath, { recursive: true, force: true });
+                                qrStatus = 'idle';
+                            }, 3000);
+                        }
+                    }, 2000);
                 }
 
                 if (connection === 'close') {
