@@ -1,225 +1,117 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="si">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BABIYA-MD | Session Generator</title>
-    <!-- Tailwind CSS v4 & Google Fonts -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>BABIYA-MD Pair Code Generator</title>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #1e293b;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        h2 { color: #38bdf8; margin-bottom: 20px; }
+        input {
+            width: 90%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #475569;
+            border-radius: 6px;
+            background: #0f172a;
+            color: white;
+            font-size: 16px;
+            text-align: center;
+        }
+        button {
+            width: 96%;
+            padding: 12px;
+            background: #0284c7;
+            border: none;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        button:hover { background: #0369a1; }
+        .result-box {
+            margin-top: 25px;
+            padding: 15px;
+            background: #0f172a;
+            border-radius: 6px;
+            border: 1px dashed #38bdf8;
+            display: none;
+        }
+        .code {
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 5px;
+            color: #4ade80;
+        }
+        .loading { color: #e2e8f0; font-style: italic; }
     </style>
 </head>
-<body class="bg-gradient-to-b from-[#0b0d19] to-[#06070c] text-slate-300 min-h-screen flex flex-col justify-between selection:bg-[#c48f43]/30">
+<body>
 
-    <!-- Main Container -->
-    <main class="flex-1 flex items-center justify-center p-4 sm:p-6 my-4">
-        <div class="w-full max-w-md mx-auto text-center space-y-5">
-            
-            <!-- Header Titles -->
-            <div class="space-y-1">
-                <p class="text-[10px] uppercase tracking-[0.25em] font-semibold text-[#c48f43] flex items-center justify-center gap-1">
-                    ✦ Device Linking Portal ✦
-                </p>
-                <h1 class="text-3xl font-bold tracking-tight text-white">
-                    BABIYA-MD <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Bot</span>
-                </h1>
-                <p class="text-sm italic text-slate-400 font-light">Link your WhatsApp device below</p>
-            </div>
+<div class="container">
+    <h2>BABIYA-MD CONNECTION</h2>
+    <p style="color: #94a3b8; font-size: 14px;">ඇතුළත් කරන්න: 947xxxxxxxx (Country Code එක සමඟ)</p>
+    
+    <input type="text" id="phoneNumber" placeholder="947xxxxxxxx">
+    <button onclick="getPairCode()">Get Pairing Code</button>
 
-            <!-- Notification Notice Box -->
-            <div class="bg-[#0e1626]/60 border border-cyan-950/40 rounded-2xl p-4 text-left flex items-start gap-3 backdrop-blur-md shadow-lg shadow-black/20">
-                <span class="text-lg mt-0.5">📢</span>
-                <p class="text-xs text-cyan-400/90 leading-relaxed font-medium">
-                    After linking the device, it takes about 3 minutes for the bot to become active. Please stay tuned! ⏳ ✨
-                </p>
-            </div>
+    <div id="loadingText" class="loading" style="display: none; margin-top: 15px;">කේතය සකසමින් පවතී, කරුණාකර රැඳී සිටින්න...</div>
 
-            <!-- Glassmorphism Main Form Card -->
-            <div class="bg-[#121624]/80 border border-slate-800/60 p-5 rounded-3xl shadow-2xl shadow-black/50 backdrop-blur-lg">
-                
-                <!-- Modern Styled Tabs Selector -->
-                <div class="flex bg-[#090b14] p-1.5 rounded-2xl mb-6 border border-slate-900 shadow-inner">
-                    <button onclick="switchTab('pairTab')" id="btn-pairTab" class="flex-1 py-3 text-sm font-semibold rounded-xl transition duration-300 bg-[#1a1f33] text-[#c48f43] border border-[#c48f43]/20 shadow-md shadow-[#c48f43]/5 cursor-pointer">
-                        <i class="fa-solid fa-link mr-2 text-xs"></i>PAIRING CODE
-                    </button>
-                    <button onclick="switchTab('qrTab')" id="btn-qrTab" class="flex-1 py-3 text-sm font-medium rounded-xl transition duration-300 text-slate-400 hover:text-white cursor-pointer">
-                        <i class="fa-solid fa-qrcode mr-2 text-xs"></i>QR CODE
-                    </button>
-                </div>
+    <div id="resultBox" class="result-box">
+        <p style="margin: 0 0 10px 0; color: #94a3b8;">ඔබගේ WhatsApp Pairing Code එක:</p>
+        <div id="pairCode" class="code">XXXX-XXXX</div>
+    </div>
+</div>
 
-                <!-- 1. PAIRING CODE TAB CONTENT -->
-                <div id="pairTab" class="tab-content block space-y-5 animate-fade-in">
-                    <div class="bg-[#090b14]/50 border border-slate-900 rounded-2xl p-4 text-left flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-xl bg-[#171d30] flex items-center justify-center text-amber-500 border border-amber-500/10 shadow-md shadow-black/20">
-                            <i class="fa-solid fa-lock text-sm"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-bold text-white tracking-wide">Connection Details</h3>
-                            <p class="text-[11px] text-slate-400">Enter your WhatsApp number to receive a pairing code</p>
-                        </div>
-                    </div>
+<script>
+    async function getPairCode() {
+        const number = document.getElementById('phoneNumber').value;
+        const loadingText = document.getElementById('loadingText');
+        const resultBox = document.getElementById('resultBox');
+        const pairCodeDiv = document.getElementById('pairCode');
 
-                    <div class="text-left space-y-2">
-                        <label class="text-[10px] font-bold text-slate-400 tracking-wider uppercase pl-1 block">WhatsApp Number</label>
-                        <div class="relative group">
-                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500 text-base font-medium transition duration-300 group-focus-within:text-[#c48f43]">
-                                <i class="fa-solid fa-phone text-xs mr-1"></i>
-                            </span>
-                            <input type="text" id="phoneNumber" placeholder="947XXXXXXXXX" class="w-full pl-10 pr-4 py-3.5 bg-[#090b14] border border-slate-900 rounded-xl focus:outline-none focus:border-[#c48f43]/60 focus:ring-1 focus:ring-[#c48f43]/20 text-white font-mono text-center text-lg tracking-wider transition placeholder:text-slate-700">
-                        </div>
-                    </div>
+        if(!number) return alert('කරුණාකර දුරකථන අංකයක් ඇතුළත් කරන්න!');
 
-                    <button onclick="getPairingCode()" id="pairStartBtn" class="w-full py-4 bg-gradient-to-r from-[#dca455] to-[#aa762c] hover:from-[#e3ae61] hover:to-[#b78237] text-black font-bold text-sm tracking-widest uppercase rounded-xl transition duration-300 shadow-xl shadow-amber-500/5 cursor-pointer flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-link text-xs"></i> Link Device
-                    </button>
+        loadingText.style.display = 'block';
+        resultBox.style.display = 'none';
 
-                    <div id="codeBox" class="p-5 bg-[#080a12] border border-dashed border-slate-800 rounded-2xl hidden transition duration-300">
-                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2" id="statusText">Your Pairing Code</p>
-                        <div id="pairCode" class="text-3xl font-mono font-black tracking-[0.2em] text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.2)]">-----</div>
-                    </div>
-                </div>
+        try {
+            const response = await fetch(`/code?number=${number}`);
+            const data = await response.json();
 
-                <!-- 2. QR CODE TAB CONTENT -->
-                <div id="qrTab" class="tab-content hidden space-y-5">
-                    <div class="bg-[#090b14]/50 border border-slate-900 rounded-2xl p-4 text-left flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-xl bg-[#171d30] flex items-center justify-center text-cyan-400 border border-cyan-500/10 shadow-md shadow-black/20">
-                            <i class="fa-solid fa-qrcode text-sm"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-bold text-white tracking-wide">Scan QR Code</h3>
-                            <p class="text-[11px] text-slate-400">Click below to generate QR code and scan it via Linked Devices</p>
-                        </div>
-                    </div>
-                    
-                    <div class="flex justify-center items-center min-h-[220px] bg-[#090b14] border border-slate-900 rounded-2xl p-4 relative shadow-inner">
-                        <div id="qrPlaceholder" class="text-slate-600 text-xs flex flex-col items-center">
-                            <i class="fa-solid fa-qrcode text-5xl mb-3 text-slate-800 drop-shadow-md"></i> 
-                            <span class="tracking-wide">No QR Generated Yet</span>
-                        </div>
-                        <img id="qrImage" src="" alt="WhatsApp QR Code" class="hidden w-[200px] h-[200px] rounded-xl border border-slate-800 shadow-xl">
-                        
-                        <!-- Loading Overlay -->
-                        <div id="qrLoading" class="absolute hidden flex flex-col items-center bg-[#090b14]/95 inset-0 justify-center rounded-2xl">
-                            <i class="fa-solid fa-circle-notch text-[#c48f43] text-3xl animate-spin mb-3"></i>
-                            <p class="text-xs text-amber-400/90 tracking-wide font-medium" id="qrStatusText">Connecting Core...</p>
-                        </div>
-                    </div>
-
-                    <button onclick="startQrMethod()" id="qrStartBtn" class="w-full py-4 bg-gradient-to-r from-[#dca455] to-[#aa762c] hover:from-[#e3ae61] hover:to-[#b78237] text-black font-bold text-sm tracking-widest uppercase rounded-xl transition duration-300 shadow-xl shadow-amber-500/5 cursor-pointer flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-rotate mr-1 text-xs"></i> Get QR Code
-                    </button>
-                </div>
-
-            </div>
-        </div>
-    </main>
-
-    <!-- Footer Area -->
-    <footer class="text-center py-5 text-[11px] tracking-wide text-slate-600 font-medium flex items-center justify-center gap-1.5">
-        <span>👑</span> Golden Queen Aesthetics for <span class="text-slate-500 font-bold">BABIYA-MD</span> &copy; 2026
-    </footer>
-
-    <script>
-        let pollInterval = null;
-
-        function switchTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => {
-                el.classList.add('hidden');
-                el.classList.remove('block');
-            });
-            document.getElementById(tabId).classList.remove('hidden');
-            document.getElementById(tabId).classList.add('block');
-            
-            // Inactive style variables 
-            const inactiveStyle = "flex-1 py-3 text-sm font-medium rounded-xl transition duration-300 text-slate-400 hover:text-white cursor-pointer";
-            // Active style variables
-            const activeStyle = "flex-1 py-3 text-sm font-semibold rounded-xl transition duration-300 bg-[#1a1f33] text-[#c48f43] border border-[#c48f43]/20 shadow-md shadow-[#c48f43]/5 cursor-pointer";
-            
-            document.getElementById('btn-qrTab').className = inactiveStyle;
-            document.getElementById('btn-pairTab').className = inactiveStyle;
-            document.getElementById('btn-' + tabId).className = activeStyle;
-            
-            if(tabId !== 'qrTab' && pollInterval) {
-                clearInterval(pollInterval);
+            loadingText.style.display = 'none';
+            if(data.code) {
+                pairCodeDiv.innerText = data.code;
+                resultBox.style.display = 'block';
+            } else {
+                alert('කේතය ලබා ගැනීමට අපොහොසත් විය. නැවත උත්සාහ කරන්න.');
             }
+        } catch (err) {
+            loadingText.style.display = 'none';
+            alert('සර්වර් එක සම්බන්ධ කර ගැනීමට නොහැක!');
         }
+    }
+</script>
 
-        // --- QR CODE SYSTEM ---
-        async function startQrMethod() {
-            const placeholder = document.getElementById('qrPlaceholder');
-            const qrImg = document.getElementById('qrImage');
-            const loading = document.getElementById('qrLoading');
-            const statusTxt = document.getElementById('qrStatusText');
-
-            placeholder.classList.remove('hidden');
-            qrImg.classList.add('hidden');
-            loading.classList.remove('hidden');
-            statusTxt.innerText = "Initializing Server...";
-
-            await fetch('/api/qr/start');
-
-            if(pollInterval) clearInterval(pollInterval);
-            
-            pollInterval = setInterval(async () => {
-                const res = await fetch('/api/qr/poll');
-                const data = await res.json();
-
-                if(data.status === 'scanning' && data.qr) {
-                    loading.classList.add('hidden');
-                    placeholder.classList.add('hidden');
-                    qrImg.classList.remove('hidden');
-                    qrImg.src = data.qr;
-                } else if(data.status === 'success') {
-                    clearInterval(pollInterval);
-                    loading.classList.remove('hidden');
-                    statusTxt.innerHTML = "<i class='fa-solid fa-circle-check text-emerald-400 text-2xl mb-1 block'></i> Success! ID sent to WhatsApp.";
-                    qrImg.classList.add('hidden');
-                } else if(data.status === 'error') {
-                    clearInterval(pollInterval);
-                    loading.classList.remove('hidden');
-                    statusTxt.innerText = "Failed to load QR. Try again.";
-                }
-            }, 2000);
-        }
-
-        // --- PAIRING CODE SYSTEM ---
-        async function getPairingCode() {
-            const number = document.getElementById('phoneNumber').value;
-            const codeBox = document.getElementById('codeBox');
-            const pairCode = document.getElementById('pairCode');
-            const statusText = document.getElementById('statusText');
-
-            if(!number) return alert('Please enter your phone number!');
-
-            codeBox.classList.remove('hidden');
-            statusText.innerText = "Status";
-            pairCode.className = "text-xs text-amber-400 animate-pulse font-medium";
-            pairCode.innerText = "Generating code... Please wait...";
-
-            try {
-                const res = await fetch('/api/pair', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ number })
-                });
-                const data = await res.json();
-
-                if(data.code) {
-                    statusText.innerText = "Your Pairing Code";
-                    pairCode.className = "text-3xl font-mono font-black tracking-[0.2em] text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.3)]";
-                    pairCode.innerText = data.code;
-                } else {
-                    pairCode.className = "text-xs text-red-400 font-medium";
-                    pairCode.innerText = data.error || "Failed to get code.";
-                }
-            } catch(e) {
-                pairCode.className = "text-xs text-red-400 font-medium";
-                pairCode.innerText = "Server Error!";
-            }
-        }
-    </script>
 </body>
 </html>
