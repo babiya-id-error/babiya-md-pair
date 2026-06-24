@@ -1,182 +1,225 @@
-const express = require('express');
-const { default: makeWASocket, useMultiFileAuthState, jidNormalizedUser, Browsers, DisconnectReason, BufferJSON } = require('@whiskeysockets/baileys');
-const pino = require('pino');
-const fs = require('fs');
-const path = require('path');
-const QRCode = require('qrcode');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BABIYA-MD | Session Generator</title>
+    <!-- Tailwind CSS v4 & Google Fonts -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-gradient-to-b from-[#0b0d19] to-[#06070c] text-slate-300 min-h-screen flex flex-col justify-between selection:bg-[#c48f43]/30">
 
-const app = express();
-const PORT = process.env.PORT || 5000;
-
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
-let qrSock = null;
-let latestQrImage = null;
-let qrStatus = 'idle';
-
-// ==========================================
-// 1. PAIRING CODE METHOD (FIXED & MEMORY SYNC)
-// ==========================================
-app.post('/api/pair', async (req, res) => {
-    let phone = req.body.number;
-    if (!phone) return res.status(400).json({ error: 'Phone number required!' });
-    phone = phone.replace(/[^0-9]/g, '');
-
-    const uniqueId = Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-    const tempPath = path.join(__dirname, `temp_pair_${uniqueId}`);
-
-    let isSaved = false;
-
-    async function startPairing() {
-        try {
-            const { state, saveCreds } = await useMultiFileAuthState(tempPath);
-            const sock = makeWASocket({
-                auth: state,
-                printQRInTerminal: false,
-                logger: pino({ level: 'silent' }),
-                browser: Browsers.ubuntu('Chrome')
-            });
-
-            sock.ev.on('creds.update', saveCreds);
+    <!-- Main Container -->
+    <main class="flex-1 flex items-center justify-center p-4 sm:p-6 my-4">
+        <div class="w-full max-w-md mx-auto text-center space-y-5">
             
-            sock.ev.on('connection.update', async (update) => {
-                const { connection, lastDisconnect } = update;
+            <!-- Header Titles -->
+            <div class="space-y-1">
+                <p class="text-[10px] uppercase tracking-[0.25em] font-semibold text-[#c48f43] flex items-center justify-center gap-1">
+                    ✦ Device Linking Portal ✦
+                </p>
+                <h1 class="text-3xl font-bold tracking-tight text-white">
+                    BABIYA-MD <span class="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Bot</span>
+                </h1>
+                <p class="text-sm italic text-slate-400 font-light">Link your WhatsApp device below</p>
+            </div>
 
-                if (connection === 'open') {
-                    isSaved = true;
+            <!-- Notification Notice Box -->
+            <div class="bg-[#0e1626]/60 border border-cyan-950/40 rounded-2xl p-4 text-left flex items-start gap-3 backdrop-blur-md shadow-lg shadow-black/20">
+                <span class="text-lg mt-0.5">📢</span>
+                <p class="text-xs text-cyan-400/90 leading-relaxed font-medium">
+                    After linking the device, it takes about 3 minutes for the bot to become active. Please stay tuned! ⏳ ✨
+                </p>
+            </div>
+
+            <!-- Glassmorphism Main Form Card -->
+            <div class="bg-[#121624]/80 border border-slate-800/60 p-5 rounded-3xl shadow-2xl shadow-black/50 backdrop-blur-lg">
+                
+                <!-- Modern Styled Tabs Selector -->
+                <div class="flex bg-[#090b14] p-1.5 rounded-2xl mb-6 border border-slate-900 shadow-inner">
+                    <button onclick="switchTab('pairTab')" id="btn-pairTab" class="flex-1 py-3 text-sm font-semibold rounded-xl transition duration-300 bg-[#1a1f33] text-[#c48f43] border border-[#c48f43]/20 shadow-md shadow-[#c48f43]/5 cursor-pointer">
+                        <i class="fa-solid fa-link mr-2 text-xs"></i>PAIRING CODE
+                    </button>
+                    <button onclick="switchTab('qrTab')" id="btn-qrTab" class="flex-1 py-3 text-sm font-medium rounded-xl transition duration-300 text-slate-400 hover:text-white cursor-pointer">
+                        <i class="fa-solid fa-qrcode mr-2 text-xs"></i>QR CODE
+                    </button>
+                </div>
+
+                <!-- 1. PAIRING CODE TAB CONTENT -->
+                <div id="pairTab" class="tab-content block space-y-5 animate-fade-in">
+                    <div class="bg-[#090b14]/50 border border-slate-900 rounded-2xl p-4 text-left flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-[#171d30] flex items-center justify-center text-amber-500 border border-amber-500/10 shadow-md shadow-black/20">
+                            <i class="fa-solid fa-lock text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white tracking-wide">Connection Details</h3>
+                            <p class="text-[11px] text-slate-400">Enter your WhatsApp number to receive a pairing code</p>
+                        </div>
+                    </div>
+
+                    <div class="text-left space-y-2">
+                        <label class="text-[10px] font-bold text-slate-400 tracking-wider uppercase pl-1 block">WhatsApp Number</label>
+                        <div class="relative group">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500 text-base font-medium transition duration-300 group-focus-within:text-[#c48f43]">
+                                <i class="fa-solid fa-phone text-xs mr-1"></i>
+                            </span>
+                            <input type="text" id="phoneNumber" placeholder="947XXXXXXXXX" class="w-full pl-10 pr-4 py-3.5 bg-[#090b14] border border-slate-900 rounded-xl focus:outline-none focus:border-[#c48f43]/60 focus:ring-1 focus:ring-[#c48f43]/20 text-white font-mono text-center text-lg tracking-wider transition placeholder:text-slate-700">
+                        </div>
+                    </div>
+
+                    <button onclick="getPairingCode()" id="pairStartBtn" class="w-full py-4 bg-gradient-to-r from-[#dca455] to-[#aa762c] hover:from-[#e3ae61] hover:to-[#b78237] text-black font-bold text-sm tracking-widest uppercase rounded-xl transition duration-300 shadow-xl shadow-amber-500/5 cursor-pointer flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-link text-xs"></i> Link Device
+                    </button>
+
+                    <div id="codeBox" class="p-5 bg-[#080a12] border border-dashed border-slate-800 rounded-2xl hidden transition duration-300">
+                        <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2" id="statusText">Your Pairing Code</p>
+                        <div id="pairCode" class="text-3xl font-mono font-black tracking-[0.2em] text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.2)]">-----</div>
+                    </div>
+                </div>
+
+                <!-- 2. QR CODE TAB CONTENT -->
+                <div id="qrTab" class="tab-content hidden space-y-5">
+                    <div class="bg-[#090b14]/50 border border-slate-900 rounded-2xl p-4 text-left flex items-center gap-4">
+                        <div class="w-10 h-10 rounded-xl bg-[#171d30] flex items-center justify-center text-cyan-400 border border-cyan-500/10 shadow-md shadow-black/20">
+                            <i class="fa-solid fa-qrcode text-sm"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-white tracking-wide">Scan QR Code</h3>
+                            <p class="text-[11px] text-slate-400">Click below to generate QR code and scan it via Linked Devices</p>
+                        </div>
+                    </div>
                     
-                    // 🔥 FIXED: ෆයිල් කියවන්නේ නැතුව රැම් එකේ තියෙන ලයිව් ක්‍රෙඩෙන්ෂල්ස් BufferJSON හරහාම Base64 කරනවා
-                    const base64Session = Buffer.from(BufferJSON.stringify(state.creds)).toString('base64');
-                    const sessionId = `BABIYA-MD;;;${base64Session}`;
+                    <div class="flex justify-center items-center min-h-[220px] bg-[#090b14] border border-slate-900 rounded-2xl p-4 relative shadow-inner">
+                        <div id="qrPlaceholder" class="text-slate-600 text-xs flex flex-col items-center">
+                            <i class="fa-solid fa-qrcode text-5xl mb-3 text-slate-800 drop-shadow-md"></i> 
+                            <span class="tracking-wide">No QR Generated Yet</span>
+                        </div>
+                        <img id="qrImage" src="" alt="WhatsApp QR Code" class="hidden w-[200px] h-[200px] rounded-xl border border-slate-800 shadow-xl">
+                        
+                        <!-- Loading Overlay -->
+                        <div id="qrLoading" class="absolute hidden flex flex-col items-center bg-[#090b14]/95 inset-0 justify-center rounded-2xl">
+                            <i class="fa-solid fa-circle-notch text-[#c48f43] text-3xl animate-spin mb-3"></i>
+                            <p class="text-xs text-amber-400/90 tracking-wide font-medium" id="qrStatusText">Connecting Core...</p>
+                        </div>
+                    </div>
 
-                    const myJid = jidNormalizedUser(sock.user.id);
+                    <button onclick="startQrMethod()" id="qrStartBtn" class="w-full py-4 bg-gradient-to-r from-[#dca455] to-[#aa762c] hover:from-[#e3ae61] hover:to-[#b78237] text-black font-bold text-sm tracking-widest uppercase rounded-xl transition duration-300 shadow-xl shadow-amber-500/5 cursor-pointer flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate mr-1 text-xs"></i> Get QR Code
+                    </button>
+                </div>
 
-                    // 1. සාර්ථක බව පෙන්වන මැසේජ් එක
-                    await sock.sendMessage(myJid, { 
-                        text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY!*\n\nDo not share this code with anyone!`
-                    });
+            </div>
+        </div>
+    </main>
 
-                    // 2. සෙශන් ID එක වෙනමම මැසේජ් එකක් ලෙස
-                    await sock.sendMessage(myJid, { 
-                        text: sessionId 
-                    });
+    <!-- Footer Area -->
+    <footer class="text-center py-5 text-[11px] tracking-wide text-slate-600 font-medium flex items-center justify-center gap-1.5">
+        <span>👑</span> Golden Queen Aesthetics for <span class="text-slate-500 font-bold">BABIYA-MD</span> &copy; 2026
+    </footer>
 
-                    setTimeout(() => {
-                        try { sock.end(); } catch(e){} 
-                        if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { recursive: true, force: true });
-                    }, 5000);
-                }
+    <script>
+        let pollInterval = null;
 
-                if (connection === 'close') {
-                    const statusCode = lastDisconnect?.error?.output?.statusCode;
-                    if (statusCode !== DisconnectReason.loggedOut && !isSaved) {
-                        console.log("[PAIRING] Reconnecting to finalize setup...");
-                        setTimeout(() => startPairing(), 2000);
-                    } else if (isSaved) {
-                        if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { recursive: true, force: true });
-                    }
-                }
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('block');
             });
-
-            if (!fs.existsSync(path.join(tempPath, 'creds.json')) || !state.creds.me) {
-                setTimeout(async () => {
-                    try {
-                        const code = await sock.requestPairingCode(phone);
-                        if (!res.headersSent) {
-                            res.json({ code: code });
-                        }
-                    } catch (err) {
-                        if (!res.headersSent) {
-                            res.json({ error: 'WhatsApp Core Error. Try again.' });
-                        }
-                    }
-                }, 3000);
+            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById(tabId).classList.add('block');
+            
+            // Inactive style variables 
+            const inactiveStyle = "flex-1 py-3 text-sm font-medium rounded-xl transition duration-300 text-slate-400 hover:text-white cursor-pointer";
+            // Active style variables
+            const activeStyle = "flex-1 py-3 text-sm font-semibold rounded-xl transition duration-300 bg-[#1a1f33] text-[#c48f43] border border-[#c48f43]/20 shadow-md shadow-[#c48f43]/5 cursor-pointer";
+            
+            document.getElementById('btn-qrTab').className = inactiveStyle;
+            document.getElementById('btn-pairTab').className = inactiveStyle;
+            document.getElementById('btn-' + tabId).className = activeStyle;
+            
+            if(tabId !== 'qrTab' && pollInterval) {
+                clearInterval(pollInterval);
             }
-
-        } catch (err) {
-            if (!res.headersSent) res.status(500).json({ error: err.message });
         }
-    }
 
-    startPairing();
-});
+        // --- QR CODE SYSTEM ---
+        async function startQrMethod() {
+            const placeholder = document.getElementById('qrPlaceholder');
+            const qrImg = document.getElementById('qrImage');
+            const loading = document.getElementById('qrLoading');
+            const statusTxt = document.getElementById('qrStatusText');
 
-// ==========================================
-// 2. QR CODE METHOD (FIXED MEMORY SYNC)
-// ==========================================
-app.get('/api/qr/start', async (req, res) => {
-    const tempQrPath = path.join(__dirname, 'temp_qr_session');
-    if (fs.existsSync(tempQrPath)) fs.rmSync(tempQrPath, { recursive: true, force: true });
+            placeholder.classList.remove('hidden');
+            qrImg.classList.add('hidden');
+            loading.classList.remove('hidden');
+            statusTxt.innerText = "Initializing Server...";
 
-    latestQrImage = null;
-    qrStatus = 'scanning';
+            await fetch('/api/qr/start');
 
-    async function connectWhatsAppQR() {
-        try {
-            const { state, saveCreds } = await useMultiFileAuthState('temp_qr_session');
-            qrSock = makeWASocket({
-                auth: state,
-                printQRInTerminal: false,
-                logger: pino({ level: 'silent' }),
-                browser: Browsers.ubuntu('Chrome')
-            });
-
-            qrSock.ev.on('creds.update', saveCreds);
+            if(pollInterval) clearInterval(pollInterval);
             
-            qrSock.ev.on('connection.update', async (update) => {
-                const { connection, qr, lastDisconnect } = update;
+            pollInterval = setInterval(async () => {
+                const res = await fetch('/api/qr/poll');
+                const data = await res.json();
 
-                if (qr) {
-                    latestQrImage = await QRCode.toDataURL(qr);
+                if(data.status === 'scanning' && data.qr) {
+                    loading.classList.add('hidden');
+                    placeholder.classList.add('hidden');
+                    qrImg.classList.remove('hidden');
+                    qrImg.src = data.qr;
+                } else if(data.status === 'success') {
+                    clearInterval(pollInterval);
+                    loading.classList.remove('hidden');
+                    statusTxt.innerHTML = "<i class='fa-solid fa-circle-check text-emerald-400 text-2xl mb-1 block'></i> Success! ID sent to WhatsApp.";
+                    qrImg.classList.add('hidden');
+                } else if(data.status === 'error') {
+                    clearInterval(pollInterval);
+                    loading.classList.remove('hidden');
+                    statusTxt.innerText = "Failed to load QR. Try again.";
                 }
-
-                if (connection === 'open') {
-                    qrStatus = 'success';
-                    
-                    // 🔥 FIXED: QR එකටත් රැම් එකෙන්ම කෙලින්ම BufferJSON හරහා කේතනය කරනවා
-                    const base64Session = Buffer.from(BufferJSON.stringify(state.creds)).toString('base64');
-                    const sessionId = `BABIYA-MD;;;${base64Session}`;
-
-                    const myJid = jidNormalizedUser(qrSock.user.id);
-
-                    await qrSock.sendMessage(myJid, { 
-                        text: `*🎉 BABIYA-MD SESSION CONNECTED SUCCESSFULLY (QR)!*\n\nDo not share this code!`
-                    });
-
-                    await qrSock.sendMessage(myJid, { 
-                        text: sessionId 
-                    });
-
-                    setTimeout(() => {
-                        try { qrSock.end(); } catch(e){} 
-                        if (fs.existsSync(tempQrPath)) fs.rmSync(tempQrPath, { recursive: true, force: true });
-                        qrStatus = 'idle';
-                    }, 5000);
-                }
-
-                if (connection === 'close') {
-                    const statusCode = lastDisconnect?.error?.output?.statusCode;
-                    if (statusCode === 401) {
-                        qrStatus = 'error';
-                    } else if (qrStatus !== 'success' && qrStatus !== 'idle') {
-                        setTimeout(() => connectWhatsAppQR(), 2000);
-                    }
-                }
-            });
-        } catch (err) {
-            console.log(err.message);
+            }, 2000);
         }
-    }
 
-    connectWhatsAppQR();
-    res.json({ status: 'started' });
-});
+        // --- PAIRING CODE SYSTEM ---
+        async function getPairingCode() {
+            const number = document.getElementById('phoneNumber').value;
+            const codeBox = document.getElementById('codeBox');
+            const pairCode = document.getElementById('pairCode');
+            const statusText = document.getElementById('statusText');
 
-app.get('/api/qr/poll', (req, res) => {
-    res.json({ status: qrStatus, qr: latestQrImage });
-});
+            if(!number) return alert('Please enter your phone number!');
 
-app.listen(PORT, () => {
-    console.log(`\n🌐 [SERVER RUNNING] http://localhost:${PORT}`);
-});
+            codeBox.classList.remove('hidden');
+            statusText.innerText = "Status";
+            pairCode.className = "text-xs text-amber-400 animate-pulse font-medium";
+            pairCode.innerText = "Generating code... Please wait...";
+
+            try {
+                const res = await fetch('/api/pair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ number })
+                });
+                const data = await res.json();
+
+                if(data.code) {
+                    statusText.innerText = "Your Pairing Code";
+                    pairCode.className = "text-3xl font-mono font-black tracking-[0.2em] text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.3)]";
+                    pairCode.innerText = data.code;
+                } else {
+                    pairCode.className = "text-xs text-red-400 font-medium";
+                    pairCode.innerText = data.error || "Failed to get code.";
+                }
+            } catch(e) {
+                pairCode.className = "text-xs text-red-400 font-medium";
+                pairCode.innerText = "Server Error!";
+            }
+        }
+    </script>
+</body>
+</html>
