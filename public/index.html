@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BABIYA-MD Pair Code Generator</title>
+    <title>BABIYA-MD Connection Center</title>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background: #0f172a;
             color: white;
             display: flex;
@@ -18,25 +19,50 @@
         .container {
             background: #1e293b;
             padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
             text-align: center;
-            max-width: 400px;
+            max-width: 450px;
             width: 100%;
         }
-        h2 { color: #38bdf8; margin-bottom: 20px; }
+        h2 { color: #38bdf8; margin-top: 0; font-size: 26px; }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 4px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: 0.3s;
+        }
+        .tab-btn.active {
+            background: #0284c7;
+            color: white;
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         input {
             width: 90%;
             padding: 12px;
             margin-bottom: 15px;
             border: 2px solid #475569;
-            border-radius: 6px;
+            border-radius: 8px;
             background: #0f172a;
             color: white;
             font-size: 16px;
             text-align: center;
         }
-        button {
+        button.action-btn {
             width: 96%;
             padding: 12px;
             background: #0284c7;
@@ -44,73 +70,114 @@
             color: white;
             font-size: 16px;
             font-weight: bold;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             transition: 0.3s;
         }
-        button:hover { background: #0369a1; }
-        .result-box {
-            margin-top: 25px;
+        button.action-btn:hover { background: #0369a1; }
+        .display-box {
+            margin-top: 20px;
             padding: 15px;
             background: #0f172a;
-            border-radius: 6px;
+            border-radius: 8px;
             border: 1px dashed #38bdf8;
-            display: none;
+            min-height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
         }
         .code {
-            font-size: 28px;
+            font-size: 32px;
             font-weight: bold;
-            letter-spacing: 5px;
+            letter-spacing: 4px;
             color: #4ade80;
         }
-        .loading { color: #e2e8f0; font-style: italic; }
+        .qr-img {
+            width: 220px;
+            height: 220px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .status-msg { color: #e2e8f0; font-style: italic; font-size: 14px; }
+        .success-msg { color: #4ade80; font-weight: bold; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>BABIYA-MD CONNECTION</h2>
-    <p style="color: #94a3b8; font-size: 14px;">ඇතුළත් කරන්න: 947xxxxxxxx (Country Code එක සමඟ)</p>
+    <h2>BABIYA-MD PAIRING PANEL</h2>
     
-    <input type="text" id="phoneNumber" placeholder="947xxxxxxxx">
-    <button onclick="getPairCode()">Get Pairing Code</button>
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('qr-tab')">QR Code</button>
+        <button class="tab-btn" onclick="switchTab('code-tab')">Pairing Code</button>
+    </div>
 
-    <div id="loadingText" class="loading" style="display: none; margin-top: 15px;">කේතය සකසමින් පවතී, කරුණාකර රැඳී සිටින්න...</div>
+    <!-- QR Code Tab -->
+    <div id="qr-tab" class="tab-content active">
+        <p style="color: #94a3b8; font-size: 14px; margin-bottom: 25px;">පහත බටන් එක ඔබා ලැබෙන QR කේතය ස්කෑන් කරන්න.</p>
+        <button class="action-btn" onclick="requestQR()">Generate QR Code</button>
+    </div>
 
-    <div id="resultBox" class="result-box">
-        <p style="margin: 0 0 10px 0; color: #94a3b8;">ඔබගේ WhatsApp Pairing Code එක:</p>
-        <div id="pairCode" class="code">XXXX-XXXX</div>
+    <!-- Pairing Code Tab -->
+    <div id="code-tab" class="tab-content">
+        <p style="color: #94a3b8; font-size: 14px;">ඇතුළත් කරන්න: 947xxxxxxxx (Country Code සමඟ)</p>
+        <input type="text" id="phoneNumber" placeholder="947xxxxxxxx">
+        <button class="action-btn" onclick="requestPairCode()">Get Pairing Code</button>
+    </div>
+
+    <!-- පොදු Display Area (QR, Code සහ Status පෙන්වීමට) -->
+    <div id="displayArea" class="display-box" style="display: none;">
+        <div id="boxContent" class="status-msg">කරුණාකර ක්‍රියාවක් තෝරන්න...</div>
     </div>
 </div>
 
 <script>
-    async function getPairCode() {
-        const number = document.getElementById('phoneNumber').value;
-        const loadingText = document.getElementById('loadingText');
-        const resultBox = document.getElementById('resultBox');
-        const pairCodeDiv = document.getElementById('pairCode');
+    const socket = io();
+    const displayArea = document.getElementById('displayArea');
+    const boxContent = document.getElementById('boxContent');
 
-        if(!number) return alert('කරුණාකර දුරකථන අංකයක් ඇතුළත් කරන්න!');
-
-        loadingText.style.display = 'block';
-        resultBox.style.display = 'none';
-
-        try {
-            const response = await fetch(`/code?number=${number}`);
-            const data = await response.json();
-
-            loadingText.style.display = 'none';
-            if(data.code) {
-                pairCodeDiv.innerText = data.code;
-                resultBox.style.display = 'block';
-            } else {
-                alert('කේතය ලබා ගැනීමට අපොහොසත් විය. නැවත උත්සාහ කරන්න.');
-            }
-        } catch (err) {
-            loadingText.style.display = 'none';
-            alert('සර්වර් එක සම්බන්ධ කර ගැනීමට නොහැක!');
-        }
+    function switchTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        displayArea.style.display = 'none';
     }
+
+    function requestQR() {
+        displayArea.style.display = 'flex';
+        boxContent.innerHTML = '<span class="status-msg">QR කේතය සකසමින්, කරුණාකර රැඳී සිටින්න...</span>';
+        socket.emit('get_qr');
+    }
+
+    function requestPairCode() {
+        const number = document.getElementById('phoneNumber').value;
+        if(!number) return alert('කරුණාකර දුරකථන අංකයක් ඇතුළත් කරන්න!');
+        
+        displayArea.style.display = 'flex';
+        boxContent.innerHTML = '<span class="status-msg">Pairing Code එක සකසමින්, කරුණාකර රැඳී සිටින්න...</span>';
+        socket.emit('get_code', number);
+    }
+
+    // Sockets වලින් ලැබෙන දේවල් හැන්ඩ්ල් කිරීම
+    socket.on('qr_code', (url) => {
+        boxContent.innerHTML = `<img src="${url}" class="qr-img" alt="WhatsApp QR">`;
+    });
+
+    socket.on('pairing_code', (code) => {
+        boxContent.innerHTML = `<p style="margin:0 0 10px 0; color:#94a3b8;">ඔබගේ කේතය:</p><div class="code">${code}</div>`;
+    });
+
+    socket.on('server_message', (msg) => {
+        boxContent.innerHTML = `<span class="status-msg">${msg}</span>`;
+    });
+
+    socket.on('success', (msg) => {
+        boxContent.innerHTML = `<span class="success-msg">${msg}</span>`;
+    });
 </script>
 
 </body>
