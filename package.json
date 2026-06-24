@@ -1,7 +1,7 @@
 {
   "name": "babiya-md-pair-site",
   "version": "1.0.0",
-  "description": "Pairing code generator for Babiya MD",
+  "description": "Pairing and QR code generator for Babiya MD",
   "main": "index.js",
   "scripts": {
     "start": "node index.js"
@@ -9,6 +9,8 @@
   "dependencies": {
     "@whiskeysockets/baileys": "^6.6.0",
     "express": "^4.19.2",
-    "pino": "^9.1.0"
+    "pino": "^9.1.0",
+    "qrcode": "^1.5.3",
+    "socket.io": "^4.7.5"
   }
 }
