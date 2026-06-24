@@ -1,27 +1,29 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const path = require('path');
 const pino = require('pino');
 const fs = require('fs');
+const QRCode = require('qrcode');
 const { default: makeWASocket, useMultiFileAuthState, delay } = require('@whiskeysockets/baileys');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Pairing API Endpoint
-app.get('/code', async (req, res) => {
-    let phone = req.query.number;
-    if (!phone) return res.status(400).json({ error: 'Phone number is required' });
-    
-    phone = phone.replace(/[^0-9]/g, '');
+io.on('connection', (socket) => {
+    let sock = null;
+    let sessionDir = null;
 
-    // තාවකාලික සෙෂන් ෆෝල්ඩර් එකක් (Random ID එකකින්)
-    const sessionDir = `./session_${Date.now()}`;
-    const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
+    // Baileys Socket එක පණගන්වන පොදු ෆන්ක්ෂන් එක
+    async function startWhatsAppLogic(phone = null) {
+        sessionDir = `./session_${Date.now()}`;
+        const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
 
-    try {
-        const sock = makeWASocket({
+        sock = makeWASocket({
             auth: state,
             printQRInTerminal: false,
             logger: pino({ level: 'silent' }),
@@ -30,14 +32,24 @@ app.get('/code', async (req, res) => {
 
         sock.ev.on('creds.update', saveCreds);
 
-        // Connection Update Handler
         sock.ev.on('connection.update', async (update) => {
-            const { connection } = update;
+            const { connection, qr } = update;
 
+            // QR කේතය ලැබුණු විට එය ඉමේජ් එකක් කර වෙබ් එකට යැවීම
+            if (qr && !phone) {
+                try {
+                    const qrImageUrl = await QRCode.toDataURL(qr);
+                    socket.emit('qr_code', qrImageUrl);
+                } catch (err) {
+                    socket.emit('server_message', '❌ QR එක සාදා ගැනීමට නොහැකි විය.');
+                }
+            }
+
+            // කනෙක්ශන් එක සාර්ථක වුණොත්
             if (connection === 'open') {
-                await delay(5000); // creds.json එක සම්පූර්ණයෙන්ම සේව් වෙනකන් පොඩි ඩිලේ එකක්
+                socket.emit('server_message', '🔄 සෙෂන් එක සකසමින් පවතී...');
+                await delay(5000);
 
-                // creds.json කියවලා Base64 කරන්න
                 const credsPath = path.join(sessionDir, 'creds.json');
                 if (fs.existsSync(credsPath)) {
                     const credsData = fs.readFileSync(credsPath, 'utf8');
@@ -46,36 +58,58 @@ app.get('/code', async (req, res) => {
 
                     const myJid = sock.user.id.split(':')[0] + '@s.whatsapp.net';
 
-                    // 1. පළවෙනි මැසේජ් එක - විස්තර සටහන
+                    // මැසේජ් 2ක් යවනවා (කොපි කරගන්න ලේසි වෙන්න)
                     await sock.sendMessage(myJid, { 
                         text: `👑 *BABIYA-MD SESSION CONNECTED* 👑\n\n⚠️ *මෙම කෝඩ් එක කා සමඟවත් බෙදා නොගන්න!*` 
                     });
-
-                    // 2. දෙවෙනි මැසේජ් එක - Session ID එක විතරක් (කොපි කරගන්න ලේසි වෙන්න) 🔥
                     await sock.sendMessage(myJid, { text: sessionId });
-                }
 
-                // ආරක්ෂාව වෙනුවෙන් වැඩේ ඉවර වුණු ගමන් සර්වර් එකේ තියෙන තාවකාලික ෆයිල් wipe කරනවා
-                try {
-                    sock.logout();
-                    fs.rmSync(sessionDir, { recursive: true, force: true });
-                } catch (e) {}
+                    socket.emit('login_success', '🎉 නියමයි! Session ID එක ඔබේ WhatsApp ගිණුමට සාර්ථකව එවා ඇත.');
+                }
+                clearSessionFiles();
             }
         });
 
-        // Pairing Code එක රික්වෙස්ට් කරලා වෙබ් එකට යැවීම
-        setTimeout(async () => {
-            try {
-                const code = await sock.requestPairingCode(phone);
-                res.json({ code: code });
-            } catch (err) {
-                res.status(500).json({ error: 'Failed to generate pairing code' });
-            }
-        }, 3000);
-
-    } catch (error) {
-        res.status(500).json({ error: 'Server Error' });
+        // ජංගම දුරකථන අංකය තිබේ නම් Pairing Code එක ඉල්ලීම
+        if (phone) {
+            setTimeout(async () => {
+                try {
+                    const code = await sock.requestPairingCode(phone);
+                    socket.emit('pairing_code', code);
+                } catch (err) {
+                    socket.emit('server_message', '❌ Pairing Code එක ලබා ගැනීමට අපොහොසත් විය.');
+                }
+            }, 3000);
+        }
     }
+
+    // වෙබ් එකෙන් QR ඉල්ලන විට
+    socket.on('get_qr', async () => {
+        clearSessionFiles();
+        startWhatsAppLogic();
+    });
+
+    // වෙබ් එකෙන් කෝඩ් ඉල්ලන විට
+    socket.on('get_code', async (phone) => {
+        clearSessionFiles();
+        startWhatsAppLogic(phone.replace(/[^0-9]/g, ''));
+    });
+
+    function clearSessionFiles() {
+        try {
+            if (sock) {
+                sock.ev.removeAllListeners('connection.update');
+                sock.ev.removeAllListeners('creds.update');
+            }
+            if (sessionDir && fs.existsSync(sessionDir)) {
+                fs.rmSync(sessionDir, { recursive: true, force: true });
+            }
+        } catch (e) {}
+    }
+
+    socket.on('disconnect', () => {
+        clearSessionFiles();
+    });
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server active on port ${PORT}`));
