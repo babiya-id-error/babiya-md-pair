@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BABIYA-MD Device Linking</title>
+    <style>
+        body { background-color: #0f172a; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { background-color: #1e293b; padding: 30px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); width: 100%; max-width: 400px; text-align: center; border: 1px solid #334155; }
+        h1 { color: #38bdf8; margin-bottom: 5px; }
+        p { color: #94a3b8; font-size: 14px; margin-bottom: 25px; }
+        input { width: 90%; padding: 12px; margin-bottom: 20px; border-radius: 8px; border: 1px solid #475569; background-color: #0f172a; color: white; font-size: 16px; outline: none; }
+        button { width: 100%; padding: 12px; background-color: #ca8a04; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background-color: #a16207; }
+        .code-box { margin-top: 20px; padding: 15px; background-color: #0f172a; border-radius: 8px; font-size: 24px; letter-spacing: 5px; font-weight: bold; color: #fbbf24; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>BABIYA-MD</h1>
+    <p>Link your WhatsApp device below</p>
+
+    <input type="text" id="phone" placeholder="Enter WhatsApp Number (e.g. 94712345678)" required>
+    <button id="linkBtn" onclick="getCode()">LINK DEVICE</button>
+
+    <div class="code-box" id="codeBox"></div>
+    <p id="status" style="margin-top: 15px; color: #10b981; display: none;">Check your WhatsApp for the Session ID!</p>
+</div>
+
+<script>
+    async function getCode() {
+        const phone = document.getElementById('phone').value;
+        const btn = document.getElementById('linkBtn');
+        const codeBox = document.getElementById('codeBox');
+        
+        if(!phone) return alert('Please enter your number!');
+        
+        btn.innerText = "GENERATING...";
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/pair', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: phone })
+            });
+            const data = await response.json();
+
+            if (data.code) {
+                codeBox.innerText = data.code;
+                codeBox.style.display = "block";
+                btn.style.display = "none";
+                document.getElementById('status').style.display = "block";
+                document.getElementById('status').innerText = "Enter this code in WhatsApp notifications. It takes a few seconds.";
+            } else {
+                alert('Error: ' + data.error);
+                btn.innerText = "LINK DEVICE";
+                btn.disabled = false;
+            }
+        } catch (err) {
+            alert('Failed to connect to server.');
+            btn.innerText = "LINK DEVICE";
+            btn.disabled = false;
+        }
+    }
+</script>
+
+</body>
+</html>
