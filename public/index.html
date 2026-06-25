@@ -28,6 +28,74 @@
             overflow-x: hidden;
         }
 
+        /* LANGUAGE SELECTION OVERLAY */
+        #langModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(15px);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            transition: opacity 0.5s ease;
+        }
+
+        .lang-box {
+            background: var(--panel-bg);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            max-width: 90%;
+        }
+
+        .lang-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 30px;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .lang-btn {
+            display: block;
+            width: 100%;
+            padding: 15px 30px;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            background: rgba(56, 189, 248, 0.1);
+            border: 2px solid #38bdf8;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .lang-btn:hover {
+            background: #38bdf8;
+            color: #0f172a;
+            transform: scale(1.05);
+        }
+
+        .lang-btn.sinhala {
+            border-color: #f59e0b;
+            background: rgba(245, 158, 11, 0.1);
+        }
+        
+        .lang-btn.sinhala:hover {
+            background: #f59e0b;
+            color: #0f172a;
+        }
+
+        /* MAIN CONTAINER */
         .container { 
             background-color: var(--panel-bg); 
             backdrop-filter: blur(10px);
@@ -38,7 +106,8 @@
             max-width: 420px; 
             text-align: center; 
             border: 1px solid var(--border-color); 
-            transition: all 0.4s ease;
+            display: none; /* Hidden until language is selected */
+            animation: fadeIn 0.6s ease;
         }
 
         h1 { 
@@ -57,7 +126,6 @@
             margin-bottom: 30px; 
         }
 
-        /* TABS SETUP */
         .tab-container {
             display: flex;
             background-color: rgba(15, 23, 42, 0.6);
@@ -86,25 +154,15 @@
             box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
         }
 
-        .method-content {
-            display: none;
-            animation: fadeIn 0.5s ease;
-        }
-
-        .method-content.active {
-            display: block;
-        }
+        .method-content { display: none; animation: fadeIn 0.5s ease; }
+        .method-content.active { display: block; }
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* INPUTS & BUTTONS */
-        .input-group {
-            text-align: left;
-            margin-bottom: 20px;
-        }
+        .input-group { text-align: left; margin-bottom: 20px; }
 
         label {
             font-size: 13px;
@@ -113,7 +171,6 @@
             display: block;
             margin-bottom: 8px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         input { 
@@ -129,10 +186,7 @@
             transition: all 0.3s ease;
         }
 
-        input:focus {
-            border-color: #38bdf8;
-            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
-        }
+        input:focus { border-color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
 
         .action-btn { 
             width: 100%; 
@@ -148,19 +202,9 @@
             box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
         }
 
-        .action-btn:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
-        }
+        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); }
+        .action-btn:disabled { background: #475569; cursor: not-allowed; transform: none; box-shadow: none; }
 
-        .action-btn:disabled {
-            background: #475569;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* PAIRING CODE BOX */
         .code-box { 
             margin-top: 25px; 
             padding: 18px; 
@@ -175,14 +219,7 @@
             animation: pulse 2s infinite;
         }
 
-        /* QR CODE DISPLAY BOX */
-        .qr-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin-top: 10px;
-        }
+        .qr-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 10px; }
 
         .qr-box {
             padding: 15px;
@@ -198,7 +235,6 @@
             justify-content: center;
         }
 
-        /* LOADING SPINNER */
         .spinner {
             width: 40px;
             height: 40px;
@@ -208,8 +244,16 @@
             animation: spin 1s linear infinite;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* QR TIMER BOX */
+        .qr-timer {
+            margin-bottom: 15px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #38bdf8;
+            display: none;
+            transition: color 0.3s ease;
         }
 
         .status-msg { 
@@ -227,18 +271,26 @@
 </head>
 <body>
 
-<div class="container">
+<div id="langModal">
+    <div class="lang-box">
+        <div class="lang-title">Choose Language<br><span style="font-size: 1.4rem; color: #f59e0b;">භාෂාව තෝරන්න</span></div>
+        <button class="lang-btn" onclick="setLanguage('en')">English</button>
+        <button class="lang-btn sinhala" onclick="setLanguage('si')">සිංහල (Sinhala)</button>
+    </div>
+</div>
+
+<div class="container" id="mainContainer">
     <h1>BABIYA-MD</h1>
-    <div class="subtitle">Select your preferred device linking method</div>
+    <div class="subtitle" id="text-subtitle">Select your preferred device linking method</div>
 
     <div class="tab-container">
-        <button class="tab-btn active" onclick="switchTab('pairing')">Pairing Code</button>
-        <button class="tab-btn" onclick="switchTab('qr')">QR Code Scan</button>
+        <button class="tab-btn active" id="tab-pairing" onclick="switchTab('pairing')">Pairing Code</button>
+        <button class="tab-btn" id="tab-qr" onclick="switchTab('qr')">QR Code Scan</button>
     </div>
 
     <div id="pairingSection" class="method-content active">
         <div class="input-group">
-            <label for="phone">WhatsApp Number</label>
+            <label for="phone" id="lbl-phone">WhatsApp Number</label>
             <input type="text" id="phone" placeholder="94712345678" required>
         </div>
         <button id="linkBtn" class="action-btn" onclick="getCode()">GET PAIRING CODE</button>
@@ -250,6 +302,8 @@
             <div class="qr-box" id="qrcode">
                 <div class="spinner" id="qrSpinner"></div>
             </div>
+            <div id="qrTimer" class="qr-timer"></div>
+            
             <button id="qrRefreshBtn" class="action-btn" style="background: linear-gradient(90deg, #38bdf8, #0284c7); box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);" onclick="generateQR()">REFRESH QR</button>
         </div>
     </div>
@@ -258,13 +312,71 @@
 </div>
 
 <script>
-    // Tabs මාරු කරන ප්‍රධාන Function එක
+    // --- TRANSLATION DICTIONARY ---
+    const dict = {
+        en: {
+            subtitle: "Select your preferred device linking method",
+            tabPair: "Pairing Code",
+            tabQR: "QR Code Scan",
+            lblPhone: "WhatsApp Number",
+            btnCode: "GET PAIRING CODE",
+            btnCodeLoading: "GENERATING CODE...",
+            btnRefresh: "REFRESH QR",
+            statusPairing: "👉 Enter this code on your phone's WhatsApp notification. Keep this tab open until session is generated.",
+            statusQR: "📸 Open WhatsApp > Linked Devices > Link a Device and Scan this QR Code.",
+            errServer: "Failed to connect to server.",
+            errEnterPhone: "Please enter your WhatsApp number!",
+            qrExpireSub: "⏳ QR expires in",
+            qrExpired: "⚠️ QR Expired! Please refresh."
+        },
+        si: {
+            subtitle: "ඔබ කැමති සම්බන්ධ කිරීමේ ක්‍රමය තෝරන්න",
+            tabPair: "Pairing කේතය",
+            tabQR: "QR කේතය",
+            lblPhone: "WhatsApp අංකය",
+            btnCode: "කේතය ලබාගන්න",
+            btnCodeLoading: "සකසමින් පවතී...",
+            btnRefresh: "අලුත් QR එකක් ගන්න",
+            statusPairing: "👉 මෙම කේතය ඔබගේ දුරකථනයට ආපු WhatsApp notification එකේ ඇතුලත් කරන්න. වැඩේ ඉවරවෙනකන් ටැබ් එක වහන්න එපා.",
+            statusQR: "📸 WhatsApp ගිහින් Linked Devices හරහා මේ QR එක ස්කෑන් කරන්න.",
+            errServer: "සර්වර් එකට සම්බන්ධ වීමට නොහැක.",
+            errEnterPhone: "කරුණාකර ඔබගේ WhatsApp අංකය ඇතුලත් කරන්න!",
+            qrExpireSub: "⏳ QR එක Expire වීමට තව තත්පර",
+            qrExpired: "⚠️ QR එක Expire වුණා! අලුත් එකක් ගන්න."
+        }
+    };
+
+    let currentLang = 'en';
+    let qrInterval; // Timer එක වෙනුවෙන්
+
+    // --- 1. LANGUAGE SETUP FUNCTION ---
+    function setLanguage(lang) {
+        currentLang = lang;
+        
+        // Update UI Texts
+        document.getElementById('text-subtitle').innerText = dict[lang].subtitle;
+        document.getElementById('tab-pairing').innerText = dict[lang].tabPair;
+        document.getElementById('tab-qr').innerText = dict[lang].tabQR;
+        document.getElementById('lbl-phone').innerText = dict[lang].lblPhone;
+        document.getElementById('linkBtn').innerText = dict[lang].btnCode;
+        document.getElementById('qrRefreshBtn').innerText = dict[lang].btnRefresh;
+
+        // Hide Modal & Show Main Container
+        document.getElementById('langModal').style.opacity = '0';
+        setTimeout(() => {
+            document.getElementById('langModal').style.display = 'none';
+            document.getElementById('mainContainer').style.display = 'block';
+        }, 500);
+    }
+
+    // --- TAB SWITCHER ---
     function switchTab(type) {
         const tabs = document.querySelectorAll('.tab-btn');
         const contents = document.querySelectorAll('.method-content');
         const statusBox = document.getElementById('status');
 
-        statusBox.style.display = "none"; // මාරු වෙද්දී මැසේජ් ක්ලියර් කරන්න
+        statusBox.style.display = "none"; 
+        clearInterval(qrInterval); // ටැබ් මාරු කරද්දී Timer එක නතර කරනවා
 
         if(type === 'pairing') {
             tabs[0].classList.add('active');
@@ -276,7 +388,6 @@
             tabs[0].classList.remove('active');
             contents[1].classList.add('active');
             contents[0].classList.remove('active');
-            // QR ටැබ් එකට ආපු සැනින්ම QR එක ජෙනරේට් කරන්න ගන්නවා
             generateQR();
         }
     }
@@ -288,11 +399,12 @@
         const codeBox = document.getElementById('codeBox');
         const statusBox = document.getElementById('status');
         
-        if(!phone) return alert('Please enter your WhatsApp number!');
+        if(!phone) return alert(dict[currentLang].errEnterPhone);
         
-        btn.innerText = "GENERATING CODE...";
+        btn.innerText = dict[currentLang].btnCodeLoading;
         btn.disabled = true;
         codeBox.style.display = "none";
+        statusBox.style.display = "none";
 
         try {
             const response = await fetch('/pair', {
@@ -307,20 +419,55 @@
                 codeBox.style.display = "block";
                 btn.style.display = "none";
                 
-                statusBox.innerText = "👉 Enter this code on your phone's WhatsApp notification. Keep this tab open until session is generated.";
+                statusBox.innerText = dict[currentLang].statusPairing;
                 statusBox.style.color = "#fbbf24";
                 statusBox.style.background = "rgba(251, 191, 36, 0.1)";
                 statusBox.style.display = "block";
             } else {
                 alert('Error: ' + data.error);
-                btn.innerText = "GET PAIRING CODE";
+                btn.innerText = dict[currentLang].btnCode;
                 btn.disabled = false;
             }
         } catch (err) {
-            alert('Failed to connect to server.');
-            btn.innerText = "GET PAIRING CODE";
+            alert(dict[currentLang].errServer);
+            btn.innerText = dict[currentLang].btnCode;
             btn.disabled = false;
         }
+    }
+
+    // --- TIMER LOGIC ---
+    function startTimer() {
+        clearInterval(qrInterval);
+        let timeLeft = 30; // තත්පර 30න් පල්ලෙහාට
+        const timerBox = document.getElementById('qrTimer');
+        timerBox.style.display = 'block';
+        timerBox.style.color = '#38bdf8'; // මුල් පාට
+
+        function updateTimerText() {
+            if(currentLang === 'si') {
+                timerBox.innerText = `${dict['si'].qrExpireSub} ${timeLeft} යි`;
+            } else {
+                timerBox.innerText = `${dict['en'].qrExpireSub} ${timeLeft}s`;
+            }
+        }
+
+        updateTimerText();
+
+        qrInterval = setInterval(() => {
+            timeLeft--;
+            updateTimerText();
+
+            // පාට වෙනස් වීම
+            if (timeLeft <= 10 && timeLeft > 0) {
+                timerBox.style.color = '#f59e0b'; // අන්තිම තත්පර 10දී කහ පාට වෙනවා
+            } else if (timeLeft <= 0) {
+                clearInterval(qrInterval);
+                timerBox.style.color = '#ef4444'; // Expire වුණාම රතු පාටයි
+                timerBox.innerText = dict[currentLang].qrExpired;
+                // QR එක මැකෙන විදිහට ඕනෙනම් මෙතනින් හදන්න පුළුවන්
+                document.getElementById('qrcode').style.opacity = '0.3'; 
+            }
+        }, 1000);
     }
 
     // --- METHOD 2: GENERATE QR CODE ---
@@ -329,8 +476,12 @@
         const spinner = document.getElementById('qrSpinner');
         const refreshBtn = document.getElementById('qrRefreshBtn');
         const statusBox = document.getElementById('status');
+        const timerBox = document.getElementById('qrTimer');
 
-        // Reset QR Box & Show Loader
+        clearInterval(qrInterval);
+        timerBox.style.display = "none";
+        qrContainer.style.opacity = '1';
+
         qrContainer.innerHTML = "";
         qrContainer.appendChild(spinner);
         spinner.style.display = "block";
@@ -342,10 +493,8 @@
             const data = await response.json();
 
             if (data.qr) {
-                // Loader එක අයින් කරලා QR එක රෙන්ඩර් කරනවා
                 spinner.style.display = "none";
                 
-                // QRCode.js ලයිබ්‍රරි එකෙන් ලස්සනට QR එක අඳිනවා
                 new QRCode(qrContainer, {
                     text: data.qr,
                     width: 200,
@@ -356,10 +505,14 @@
                 });
 
                 refreshBtn.disabled = false;
-                statusBox.innerText = "📸 Open WhatsApp > Linked Devices > Link a Device and Scan this QR Code.";
+                statusBox.innerText = dict[currentLang].statusQR;
                 statusBox.style.color = "#38bdf8";
                 statusBox.style.background = "rgba(56, 189, 248, 0.1)";
                 statusBox.style.display = "block";
+
+                // QR එක ආපු ගමන් Timer එක පටන් ගන්නවා
+                startTimer();
+
             } else {
                 qrContainer.innerHTML = "<span style='color:#ef4444; font-size:14px; font-weight:600;'>Failed to get QR. Try again.</span>";
                 refreshBtn.disabled = false;
