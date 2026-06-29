@@ -205,3 +205,11 @@ app.get('/qr', async (req, res) => {
         }
     }
 });
+
+// ==========================================
+// 3. SERVER START
+// ==========================================
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`👑 BABIYA-MD Pair Site is running on port ${PORT}`);
+});
+
