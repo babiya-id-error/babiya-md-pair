@@ -390,6 +390,17 @@
         body.rtl .theme-trigger { right: auto; left: 30px; }
         body.rtl .theme-panel { right: auto; left: 30px; }
 
+        /* PREMIUM QR CODE FRAME ADDED HERE */
+        #qrContainer canvas, #qrContainer img {
+            background: #ffffff !important;
+            padding: 12px !important;
+            border-radius: 18px !important;
+            border: 3px solid var(--primary-accent) !important;
+            box-shadow: 0 0 25px var(--primary-glow) !important;
+            display: inline-block !important;
+            transition: all 0.3s ease;
+        }
+
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { from { opacity: 0.8; } to { opacity: 1; transform: scale(1.02); } }
     </style>
@@ -400,7 +411,7 @@
     <div id="langModal">
         <div class="modal-content">
             <!-- WELCOME HEADER ADDED HERE -->
-            <h1 class="welcome-title">BABIYA MD PAIR SITE</h1>
+            <h1 class="welcome-title">Welcome To Babiya MD PAIR SITE</h1>
             <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #fff; font-weight: 500;">Select Your Language</h3>
             <p style="color: var(--text-muted); font-size: 13px; margin: 0;">Choose a language to continue device linking</p>
             
