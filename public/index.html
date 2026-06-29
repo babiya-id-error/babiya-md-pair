@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BABIYA-MD Device Linking</title>
+    <title>BABIYA-MD Premium Device Linking</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         :root {
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            --panel-bg: rgba(30, 41, 59, 0.7);
-            --primary-blue: #38bdf8;
-            --primary-amber: #f59e0b;
+            /* Default Cyber Cyan Theme */
+            --bg-gradient: linear-gradient(135deg, #090d16 0%, #111827 100%);
+            --panel-bg: rgba(17, 24, 39, 0.75);
+            --primary-accent: #38bdf8;
+            --primary-glow: rgba(56, 189, 248, 0.3);
             --text-main: #f8fafc;
             --text-muted: #94a3b8;
-            --border-color: rgba(51, 65, 85, 0.5);
+            --border-color: rgba(56, 189, 248, 0.15);
+            --card-hover: rgba(56, 189, 248, 0.05);
         }
 
         body { 
@@ -26,503 +28,745 @@
             min-height: 100vh; 
             margin: 0;
             overflow-x: hidden;
+            transition: background 0.5s ease;
+        }
+
+        /* PREMIUM GLASS CONTAINER */
+        .container { 
+            width: 100%;
+            max-width: 480px; 
+            background: var(--panel-bg); 
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            padding: 35px 30px; 
+            border-radius: 24px; 
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1); 
+            border: 1px solid var(--border-color);
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px; right: -2px; bottom: -2px;
+            background: linear-gradient(45deg, transparent, var(--primary-accent), transparent);
+            border-radius: 24px;
+            z-index: -1;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        /* LOGO & HEADER */
+        .logo-area {
+            position: relative;
+            margin-bottom: 25px;
+        }
+        
+        .logo-glow {
+            font-size: 42px;
+            text-shadow: 0 0 20px var(--primary-glow);
+            animation: pulse 3s infinite alternate;
+        }
+
+        h1 { 
+            font-size: 26px; 
+            margin: 10px 0 5px 0; 
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(to right, #ffffff, var(--primary-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle { 
+            color: var(--text-muted); 
+            font-size: 14px; 
+            margin: 0 0 25px 0;
+            font-weight: 400;
+        }
+
+        /* PREMIUM TAB SYSTEM */
+        .tab-box {
+            display: flex;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 6px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .tab-btn.active {
+            color: #000;
+            background: var(--primary-accent);
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        /* INPUTS & BUTTONS */
+        .input-group {
+            position: relative;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            color: var(--primary-accent);
+            font-weight: 600;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input[type="text"] { 
+            width: 100%; 
+            padding: 14px 16px; 
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-radius: 12px; 
+            color: #fff; 
+            font-size: 15px; 
+            outline: none;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary-accent);
+            box-shadow: 0 0 10px var(--primary-glow);
+        }
+
+        .action-btn { 
+            width: 100%; 
+            padding: 14px; 
+            background: var(--primary-accent); 
+            color: #000; 
+            border: none; 
+            border-radius: 12px; 
+            font-size: 15px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            box-shadow: 0 5px 15px var(--primary-glow);
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover:not(:disabled) { 
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        .action-btn:disabled {
+            background: #334155 !important;
+            color: #64748b !important;
+            box-shadow: none !important;
+            cursor: not-allowed;
+        }
+
+        /* DISPLAY BOXES (QR & PAIR CODE) */
+        .display-wrapper {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px dashed rgba(255, 255, 255, 0.1);
+            margin-top: 20px;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            min-height: 180px;
+        }
+
+        #qrBox img {
+            border: 8px solid #fff;
+            border-radius: 12px;
+        }
+
+        .code-display {
+            font-size: 32px;
+            font-weight: 800;
+            letter-spacing: 5px;
+            color: var(--primary-accent);
+            text-shadow: 0 0 10px var(--primary-glow);
+            margin: 15px 0;
+            font-family: monospace;
+            cursor: pointer;
+        }
+
+        /* STATUS & TIMER */
+        .status-badge {
+            font-size: 13px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 15px;
+            display: inline-block;
+        }
+
+        .timer-badge {
+            font-size: 12px;
+            color: #f43f5e;
+            background: rgba(244, 63, 94, 0.1);
+            padding: 5px 12px;
+            border-radius: 20px;
+            margin-top: 10px;
+            display: none;
+            font-weight: 600;
         }
 
         /* LANGUAGE SELECTION OVERLAY */
         #langModal {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(15px);
-            z-index: 9999;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(4, 6, 11, 0.95);
+            backdrop-filter: blur(25px);
+            z-index: 100;
             display: flex;
             justify-content: center;
             align-items: center;
-            flex-direction: column;
-            transition: opacity 0.5s ease;
+            transition: all 0.5s ease;
         }
 
-        .lang-box {
-            background: var(--panel-bg);
-            padding: 40px;
-            border-radius: 20px;
+        .modal-content {
+            background: rgba(30, 41, 59, 0.55);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 45px 35px;
+            border-radius: 28px;
             text-align: center;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
-            max-width: 90%;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.1);
         }
 
-        .lang-title {
-            font-size: 1.8rem;
+        /* NEW WELCOME TITLE GRADIENT STYLE */
+        .welcome-title {
+            font-size: 28px;
             font-weight: 800;
-            margin-bottom: 30px;
-            background: linear-gradient(to right, #38bdf8, #818cf8);
+            margin: 0 0 8px 0;
+            background: linear-gradient(135deg, #ffffff 30%, #38bdf8 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
+            text-shadow: 0 5px 15px rgba(56, 189, 248, 0.2);
         }
 
-        .lang-btn {
-            display: block;
-            width: 100%;
-            padding: 15px 30px;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: white;
-            background: rgba(56, 189, 248, 0.1);
-            border: 2px solid #38bdf8;
-            border-radius: 12px;
+        .lang-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .lang-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 20px 15px;
+            border-radius: 16px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
-        .lang-btn:hover {
-            background: #38bdf8;
-            color: #0f172a;
-            transform: scale(1.05);
+        .lang-card:hover {
+            background: var(--card-hover);
+            border-color: var(--primary-accent);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px var(--primary-glow);
         }
 
-        .lang-btn.sinhala {
-            border-color: #f59e0b;
-            background: rgba(245, 158, 11, 0.1);
-        }
-        
-        .lang-btn.sinhala:hover {
-            background: #f59e0b;
-            color: #0f172a;
-        }
+        .lang-flag { font-size: 26px; margin-bottom: 5px; }
+        .lang-name { font-weight: 600; font-size: 14px; }
 
-        /* MAIN CONTAINER */
-        .container { 
-            background-color: var(--panel-bg); 
-            backdrop-filter: blur(10px);
-            padding: 35px 30px; 
-            border-radius: 20px; 
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 25px rgba(56, 189, 248, 0.05); 
-            width: 100%; 
-            max-width: 420px; 
-            text-align: center; 
-            border: 1px solid var(--border-color); 
-            display: none; /* Hidden until language is selected */
-            animation: fadeIn 0.6s ease;
-        }
-
-        h1 { 
-            font-size: 2.2rem;
-            font-weight: 800;
-            background: linear-gradient(to right, #38bdf8, #818cf8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin: 0 0 5px 0; 
-            letter-spacing: 1px;
-        }
-
-        .subtitle { 
-            color: var(--text-muted); 
-            font-size: 14px; 
-            margin-bottom: 30px; 
-        }
-
-        .tab-container {
-            display: flex;
-            background-color: rgba(15, 23, 42, 0.6);
-            padding: 5px;
-            border-radius: 12px;
-            margin-bottom: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .tab-btn {
-            flex: 1;
-            padding: 10px;
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            font-weight: 600;
-            font-size: 14px;
+        /* FIXED FLOATING THEME TRIGGER (MODERN & EYE-CATCHING) */
+        .theme-trigger {
+            position: fixed;
+            right: 30px;
+            top: 30px;
+            width: 58px;
+            height: 58px;
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(8px);
+            border: 2px solid var(--primary-accent);
+            border-radius: 50%;
             cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-        }
-
-        .tab-btn.active {
-            background-color: #38bdf8;
-            color: #0f172a;
-            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
-        }
-
-        .method-content { display: none; animation: fadeIn 0.5s ease; }
-        .method-content.active { display: block; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .input-group { text-align: left; margin-bottom: 20px; }
-
-        label {
-            font-size: 13px;
-            color: #38bdf8;
-            font-weight: 600;
-            display: block;
-            margin-bottom: 8px;
-            text-transform: uppercase;
-        }
-
-        input { 
-            width: 100%; 
-            padding: 14px; 
-            box-sizing: border-box;
-            border-radius: 10px; 
-            border: 1px solid #475569; 
-            background-color: rgba(15, 23, 42, 0.8); 
-            color: white; 
-            font-size: 16px; 
-            outline: none; 
-            transition: all 0.3s ease;
-        }
-
-        input:focus { border-color: #38bdf8; box-shadow: 0 0 10px rgba(56, 189, 248, 0.2); }
-
-        .action-btn { 
-            width: 100%; 
-            padding: 14px; 
-            background: linear-gradient(90deg, #f59e0b, #d97706);
-            color: white; 
-            border: none; 
-            border-radius: 10px; 
-            font-size: 16px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
-        }
-
-        .action-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4); }
-        .action-btn:disabled { background: #475569; cursor: not-allowed; transform: none; box-shadow: none; }
-
-        .code-box { 
-            margin-top: 25px; 
-            padding: 18px; 
-            background-color: #0f172a; 
-            border-radius: 12px; 
-            font-size: 28px; 
-            letter-spacing: 6px; 
-            font-weight: 800; 
-            color: #fbbf24; 
-            display: none; 
-            border: 1px dashed rgba(251, 191, 36, 0.4);
-            animation: pulse 2s infinite;
-        }
-
-        .qr-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 10px; }
-
-        .qr-box {
-            padding: 15px;
-            background: white;
-            border-radius: 15px;
-            display: inline-block;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            margin-bottom: 20px;
-            min-width: 200px;
-            min-height: 200px;
             display: flex;
-            align-items: center;
             justify-content: center;
+            align-items: center;
+            color: #fff;
+            font-size: 26px;
+            box-shadow: 0 0 20px var(--primary-glow), inset 0 1px 0 rgba(255,255,255,0.2);
+            z-index: 99;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
+        .theme-trigger:hover {
+            transform: scale(1.12) rotate(25deg);
+            box-shadow: 0 0 25px var(--primary-accent);
+        }
+
+        /* DROPDOWN OPTIONS PANEL RIGHT BELOW TRIGGER */
+        .theme-panel {
+            position: fixed;
+            right: 30px;
+            top: 100px;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            z-index: 98;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-15px) scale(0.95);
+        }
+
+        .theme-panel.open { 
+            opacity: 1; 
+            pointer-events: auto;
+            transform: translateY(0) scale(1);
+        }
+
+        .theme-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        .color-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .color-dot {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: transform 0.2s;
+        }
+
+        .color-dot:hover { transform: scale(1.18); }
+        .color-dot.active { border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.5); }
+
+        /* LOADING SPINNER */
         .spinner {
             width: 40px;
             height: 40px;
-            border: 4px solid rgba(56, 189, 248, 0.1);
-            border-left-color: #38bdf8;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: var(--primary-accent);
             border-radius: 50%;
             animation: spin 1s linear infinite;
+            display: none;
+            margin: 15px auto;
         }
+
+        /* ARABIC RTL FIX */
+        body.rtl { direction: rtl; text-align: right; }
+        body.rtl .input-group { text-align: right; }
+        body.rtl .theme-trigger { right: auto; left: 30px; }
+        body.rtl .theme-panel { right: auto; left: 30px; }
 
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* QR TIMER BOX */
-        .qr-timer {
-            margin-bottom: 15px;
-            font-size: 15px;
-            font-weight: 700;
-            color: #38bdf8;
-            display: none;
-            transition: color 0.3s ease;
-        }
-
-        .status-msg { 
-            margin-top: 20px; 
-            color: #10b981; 
-            font-size: 14px;
-            font-weight: 500;
-            display: none; 
-            line-height: 1.5;
-            padding: 10px;
-            background: rgba(16, 185, 129, 0.1);
-            border-radius: 8px;
-        }
+        @keyframes pulse { from { opacity: 0.8; } to { opacity: 1; transform: scale(1.02); } }
     </style>
 </head>
 <body>
 
-<div id="langModal">
-    <div class="lang-box">
-        <div class="lang-title">Choose Language<br><span style="font-size: 1.4rem; color: #f59e0b;">භාෂාව තෝරන්න</span></div>
-        <button class="lang-btn" onclick="setLanguage('en')">English</button>
-        <button class="lang-btn sinhala" onclick="setLanguage('si')">සිංහල</button>
-    </div>
-</div>
-
-<div class="container" id="mainContainer">
-    <h1>BABIYA-MD</h1>
-    <div class="subtitle" id="text-subtitle">Select your preferred device linking method</div>
-
-    <div class="tab-container">
-        <button class="tab-btn active" id="tab-pairing" onclick="switchTab('pairing')">Pairing Code</button>
-        <button class="tab-btn" id="tab-qr" onclick="switchTab('qr')">QR Code Scan</button>
-    </div>
-
-    <div id="pairingSection" class="method-content active">
-        <div class="input-group">
-            <label for="phone" id="lbl-phone">WhatsApp Number</label>
-            <input type="text" id="phone" placeholder="94764978991" required>
-        </div>
-        <button id="linkBtn" class="action-btn" onclick="getCode()">GET PAIRING CODE</button>
-        <div class="code-box" id="codeBox"></div>
-    </div>
-
-    <div id="qrSection" class="method-content">
-        <div class="qr-wrapper">
-            <div class="qr-box" id="qrcode">
-                <div class="spinner" id="qrSpinner"></div>
-            </div>
-            <div id="qrTimer" class="qr-timer"></div>
+    <!-- LANGUAGE SELECTION OVERLAY -->
+    <div id="langModal">
+        <div class="modal-content">
+            <!-- WELCOME HEADER ADDED HERE -->
+            <h1 class="welcome-title">BABIYA MD PAIR SITE</h1>
+            <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #fff; font-weight: 500;">Select Your Language</h3>
+            <p style="color: var(--text-muted); font-size: 13px; margin: 0;">Choose a language to continue device linking</p>
             
-            <button id="qrRefreshBtn" class="action-btn" style="background: linear-gradient(90deg, #38bdf8, #0284c7); box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);" onclick="generateQR()">REFRESH QR</button>
+            <div class="lang-grid">
+                <div class="lang-card" onclick="setLanguage('en')">
+                    <div class="lang-flag">🇺🇸</div>
+                    <div class="lang-name">English</div>
+                </div>
+                <div class="lang-card" onclick="setLanguage('si')">
+                    <div class="lang-flag">🇱🇰</div>
+                    <div class="lang-name">සිංහල</div>
+                </div>
+                <div class="lang-card" onclick="setLanguage('ta')">
+                    <div class="lang-flag">🇮🇳</div>
+                    <div class="lang-name">தமிழ்</div>
+                </div>
+                <div class="lang-card" onclick="setLanguage('ar')">
+                    <div class="lang-flag">🇸🇦</div>
+                    <div class="lang-name">العربية</div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="status" class="status-msg"></div>
-</div>
+    <!-- HIGHLY VISIBLE FLOATING THEME TRIGGER & DROPDOWN PANEL -->
+    <div class="theme-trigger" onclick="toggleThemePanel()">🎨</div>
+    <div class="theme-panel" id="themePanel">
+        <div class="theme-title" id="themeTitleText">Custom Accent</div>
+        <div class="color-options">
+            <div class="color-dot active" style="background: #38bdf8;" onclick="changeTheme('#38bdf8', 'rgba(56, 189, 248, 0.3)', this)"></div>
+            <div class="color-dot" style="background: #10b981;" onclick="changeTheme('#10b981', 'rgba(16, 185, 129, 0.3)', this)"></div>
+            <div class="color-dot" style="background: #8b5cf6;" onclick="changeTheme('#8b5cf6', 'rgba(139, 92, 246, 0.3)', this)"></div>
+            <div class="color-dot" style="background: #f59e0b;" onclick="changeTheme('#f59e0b', 'rgba(245, 158, 11, 0.3)', this)"></div>
+            <div class="color-dot" style="background: #ec4899;" onclick="changeTheme('#ec4899', 'rgba(236, 72, 153, 0.3)', this)"></div>
+            <div class="color-dot" style="background: #f43f5e;" onclick="changeTheme('#f43f5e', 'rgba(244, 63, 94, 0.3)', this)"></div>
+        </div>
+    </div>
 
-<script>
-    // --- TRANSLATION DICTIONARY ---
-    const dict = {
-        en: {
-            subtitle: "Select your preferred device linking method",
-            tabPair: "Pairing Code",
-            tabQR: "QR Code Scan",
-            lblPhone: "WhatsApp Number",
-            btnCode: "GET PAIRING CODE",
-            btnCodeLoading: "GENERATING CODE...",
-            btnRefresh: "REFRESH QR",
-            statusPairing: "👉 Enter this code on your phone's WhatsApp notification. Keep this tab open until session is generated.",
-            statusQR: "📸 Open WhatsApp > Linked Devices > Link a Device and Scan this QR Code.",
-            errServer: "Failed to connect to server.",
-            errEnterPhone: "Please enter your WhatsApp number!",
-            qrExpireSub: "⏳ QR expires in",
-            qrExpired: "⚠️ QR Expired! Please refresh."
-        },
-        si: {
-            subtitle: "ඔබ කැමති සම්බන්ධ කිරීමේ ක්‍රමය තෝරන්න",
-            tabPair: "Pairing කේතය",
-            tabQR: "QR කේතය",
-            lblPhone: "WhatsApp අංකය",
-            btnCode: "කේතය ලබාගන්න",
-            btnCodeLoading: "සකසමින් පවතී...",
-            btnRefresh: "අලුත් QR එකක් ගන්න",
-            statusPairing: "👉 මෙම කේතය ඔබගේ දුරකථනයට ආපු WhatsApp notification එකේ ඇතුලත් කරන්න. වැඩේ ඉවරවෙනකන් ටැබ් එක වහන්න එපා.",
-            statusQR: "📸 WhatsApp ගිහින් Linked Devices හරහා මේ QR එක ස්කෑන් කරන්න.",
-            errServer: "සර්වර් එකට සම්බන්ධ වීමට නොහැක.",
-            errEnterPhone: "කරුණාකර ඔබගේ WhatsApp අංකය ඇතුලත් කරන්න!",
-            qrExpireSub: "⏳ QR එක Expire වීමට තව තත්පර",
-            qrExpired: "⚠️ QR එක Expire වුණා! අලුත් එකක් ගන්න."
-        }
-    };
+    <!-- MAIN UI CONTAINER -->
+    <div class="container">
+        <div class="logo-area">
+            <div class="logo-glow">👑</div>
+            <h1 id="mainTitle">BABIYA-MD</h1>
+            <p class="subtitle" id="mainSubtitle">Premium WhatsApp Session Generator</p>
+        </div>
 
-    let currentLang = 'en';
-    let qrInterval; // Timer එක වෙනුවෙන්
+        <!-- TABS -->
+        <div class="tab-box">
+            <button class="tab-btn active" id="tabPairBtn" onclick="switchTab('pair')" data-i18n="tabPair">Pairing Code</button>
+            <button class="tab-btn" id="tabQrBtn" onclick="switchTab('qr')" data-i18n="tabQr">QR Code Scan</button>
+        </div>
 
-    // --- 1. LANGUAGE SETUP FUNCTION ---
-    function setLanguage(lang) {
-        currentLang = lang;
-        
-        // Update UI Texts
-        document.getElementById('text-subtitle').innerText = dict[lang].subtitle;
-        document.getElementById('tab-pairing').innerText = dict[lang].tabPair;
-        document.getElementById('tab-qr').innerText = dict[lang].tabQR;
-        document.getElementById('lbl-phone').innerText = dict[lang].lblPhone;
-        document.getElementById('linkBtn').innerText = dict[lang].btnCode;
-        document.getElementById('qrRefreshBtn').innerText = dict[lang].btnRefresh;
+        <!-- PAIRING CODE VIEW -->
+        <div id="pairView">
+            <div class="input-group">
+                <label id="phoneLabel" data-i18n="phoneLabel">Phone Number</label>
+                <input type="text" id="phone" placeholder="9477xxxxxxx">
+            </div>
+            <button class="action-btn" id="pairSubmitBtn" onclick="getPairingCode()" data-i18n="btnPair">Generate Code</button>
+            
+            <div class="display-wrapper" id="pairCodeBox">
+                <div class="spinner" id="pairSpinner"></div>
+                <div id="pairCodeDisplay" class="code-display" onclick="copyPairCode()">--------</div>
+                <div class="status-badge" id="pairStatus" style="display:none;"></div>
+            </div>
+        </div>
 
-        // Hide Modal & Show Main Container
-        document.getElementById('langModal').style.opacity = '0';
-        setTimeout(() => {
-            document.getElementById('langModal').style.display = 'none';
-            document.getElementById('mainContainer').style.display = 'block';
-        }, 500);
-    }
+        <!-- QR CODE VIEW -->
+        <div id="qrView" style="display: none;">
+            <button class="action-btn" id="qrSubmitBtn" onclick="getQRCode()" data-i18n="btnQr">Request QR Code</button>
+            
+            <div class="display-wrapper" id="qrContainerWrapper">
+                <div class="spinner" id="qrSpinner"></div>
+                <div id="qrContainer"></div>
+                <div class="timer-badge" id="qrTimer">00:30</div>
+                <div class="status-badge" id="qrStatus" style="display:none;"></div>
+            </div>
+        </div>
 
-    // --- TAB SWITCHER ---
-    function switchTab(type) {
-        const tabs = document.querySelectorAll('.tab-btn');
-        const contents = document.querySelectorAll('.method-content');
-        const statusBox = document.getElementById('status');
+        <!-- FOOTER -->
+        <div style="margin-top: 30px; font-size: 11px; color: var(--text-muted); letter-spacing: 0.5px;">
+            &copy; 2026 BABIYA-MD. Powered by Baileys.
+        </div>
+    </div>
 
-        statusBox.style.display = "none"; 
-        clearInterval(qrInterval); // ටැබ් මාරු කරද්දී Timer එක නතර කරනවා
+    <script>
+        let currentLang = 'en';
+        let countdownTimer;
 
-        if(type === 'pairing') {
-            tabs[0].classList.add('active');
-            tabs[1].classList.remove('active');
-            contents[0].classList.add('active');
-            contents[1].classList.remove('active');
-        } else {
-            tabs[1].classList.add('active');
-            tabs[0].classList.remove('active');
-            contents[1].classList.add('active');
-            contents[0].classList.remove('active');
-            generateQR();
-        }
-    }
+        // DICTIONARY FOR MULTI-LANGUAGE
+        const dict = {
+            en: {
+                title: "BABIYA-MD",
+                subtitle: "Premium WhatsApp Session Generator",
+                tabPair: "Pairing Code",
+                tabQr: "QR Code Scan",
+                phoneLabel: "Phone Number",
+                btnPair: "Generate Code",
+                btnQr: "Request QR Code",
+                placeholder: "9477xxxxxxx",
+                loading: "Generating, please wait...",
+                qrLoading: "Loading QR code...",
+                copySuccess: "Code Copied to Clipboard!",
+                pairStatusOpen: "Success! Check WhatsApp notification to enter code.",
+                qrStatusWaiting: "Scan this QR with WhatsApp Linked Devices",
+                timerText: "Expires in: ",
+                themeTitle: "Custom Accent"
+            },
+            si: {
+                title: "BABIYA-MD",
+                subtitle: "ප්‍රිමියම් WhatsApp සෙෂන් ජෙනරේටර්",
+                tabPair: "Pairing Code ක්‍රමය",
+                tabQr: "QR Code ස්කෑන්",
+                phoneLabel: "දුරකථන අංකය",
+                btnPair: "කෝඩ් එක ගන්න",
+                btnQr: "QR කෝඩ් එක ගන්න",
+                placeholder: "9477xxxxxxx ආකාරයට",
+                loading: "කේතය සකසමින් පවතී, රැඳී සිටින්න...",
+                qrLoading: "QR කේතය ලෝඩ් වෙමින් පවතී...",
+                copySuccess: "කෝඩ් එක කොපි කරගත්තා!",
+                pairStatusOpen: "සාර්ථකයි! WhatsApp එකෙන් ලැබුණු Notification එකට මෙම කේතය ඇතුලත් කරන්න.",
+                qrStatusWaiting: "WhatsApp Linked Devices මගින් මෙම QR එක ස්කෑන් කරන්න",
+                timerText: "වලංගු කාලය: ",
+                themeTitle: "පාට වෙනස් කරන්න"
+            },
+            ta: {
+                title: "BABIYA-MD",
+                subtitle: "பிரீமியம் வாட்ஸ்அப் அமர்வு ஜெனரேட்டர்",
+                tabPair: "இணைத்தல் குறியீடு",
+                tabQr: "QR குறியீடு ஸ்கேன்",
+                phoneLabel: "தொலைபேசி எண்",
+                btnPair: "குறியீட்டை உருவாக்கு",
+                btnQr: "QR குறியீட்டைக் கோருங்கள்",
+                placeholder: "9477xxxxxxx",
+                loading: "உருவாக்குகிறது, தயவுசெய்து காத்திருக்கவும்...",
+                qrLoading: "QR குறியீடு ஏற்றப்படுகிறது...",
+                copySuccess: "குறியீடு நகலெடுக்கப்பட்டது!",
+                pairStatusOpen: "வெற்றி! குறியீட்டை உள்ளிட வாட்ஸ்அப் அறிவிப்பைச் சரிபார்க்கவும்.",
+                qrStatusWaiting: "வாட்ஸ்அப் இணைக்கப்பட்ட சாதனங்கள் மூலம் இந்த QR ஐ ஸْகேன் செய்யவும்",
+                timerText: "காலாவதியாகிறது: ",
+                themeTitle: "நிறத்தை மாற்று"
+            },
+            ar: {
+                title: "BABIYA-MD",
+                subtitle: "مولد جلسات واتساب المتميز",
+                tabPair: "كود الاقتران",
+                tabQr: "مسح رمز QR",
+                phoneLabel: "رقم الهاتف",
+                btnPair: "توليد الكود",
+                btnQr: "طلب رمز QR",
+                placeholder: "9477xxxxxxx",
+                loading: "جاري التوليد، يرجى الانتظار...",
+                qrLoading: "جاري تحميل رمز QR...",
+                copySuccess: "تم نسخ الكود بنجاح!",
+                pairStatusOpen: "تم بنجاح! تحقق من إشعارات واتساب لإدخال الكود.",
+                qrStatusWaiting: "امسح رمز QR هذا باستخدام الأجهزة المرتبطة في واتساب",
+                timerText: "تنتهي الصلاحية خلال: ",
+                themeTitle: "تغيير المظهر"
+            }
+        };
 
-    // --- METHOD 1: GET PAIRING CODE ---
-    async function getCode() {
-        const phone = document.getElementById('phone').value;
-        const btn = document.getElementById('linkBtn');
-        const codeBox = document.getElementById('codeBox');
-        const statusBox = document.getElementById('status');
-        
-        if(!phone) return alert(dict[currentLang].errEnterPhone);
-        
-        btn.innerText = dict[currentLang].btnCodeLoading;
-        btn.disabled = true;
-        codeBox.style.display = "none";
-        statusBox.style.display = "none";
+        // SETUP LANGUAGE ON CARDS CLICK
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.getElementById('langModal').style.opacity = '0';
+            setTimeout(() => { document.getElementById('langModal').style.display = 'none'; }, 500);
 
-        try {
-            const response = await fetch('/pair', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: phone })
-            });
-            const data = await response.json();
-
-            if (data.code) {
-                codeBox.innerText = data.code;
-                codeBox.style.display = "block";
-                btn.style.display = "none";
-                
-                statusBox.innerText = dict[currentLang].statusPairing;
-                statusBox.style.color = "#fbbf24";
-                statusBox.style.background = "rgba(251, 191, 36, 0.1)";
-                statusBox.style.display = "block";
+            // Handle Right To Left for Arabic
+            if (lang === 'ar') {
+                document.body.classList.add('rtl');
             } else {
-                alert('Error: ' + data.error);
-                btn.innerText = dict[currentLang].btnCode;
-                btn.disabled = false;
+                document.body.classList.remove('rtl');
             }
-        } catch (err) {
-            alert(dict[currentLang].errServer);
-            btn.innerText = dict[currentLang].btnCode;
-            btn.disabled = false;
+
+            // Apply translations
+            document.getElementById('mainTitle').innerText = dict[lang].title;
+            document.getElementById('mainSubtitle').innerText = dict[lang].subtitle;
+            document.getElementById('tabPairBtn').innerText = dict[lang].tabPair;
+            document.getElementById('tabQrBtn').innerText = dict[lang].tabQr;
+            document.getElementById('phoneLabel').innerText = dict[lang].phoneLabel;
+            document.getElementById('pairSubmitBtn').innerText = dict[lang].btnPair;
+            document.getElementById('qrSubmitBtn').innerText = dict[lang].btnQr;
+            document.getElementById('phone').placeholder = dict[lang].placeholder;
+            document.getElementById('themeTitleText').innerText = dict[lang].themeTitle;
         }
-    }
 
-    // --- TIMER LOGIC ---
-    function startTimer() {
-        clearInterval(qrInterval);
-        let timeLeft = 30; // තත්පර 30න් පල්ලෙහාට
-        const timerBox = document.getElementById('qrTimer');
-        timerBox.style.display = 'block';
-        timerBox.style.color = '#38bdf8'; // මුල් පාට
+        // TABS SWITCH LOGIC
+        function switchTab(type) {
+            const pairBtn = document.getElementById('tabPairBtn');
+            const qrBtn = document.getElementById('tabQrBtn');
+            const pairView = document.getElementById('pairView');
+            const qrView = document.getElementById('qrView');
 
-        function updateTimerText() {
-            if(currentLang === 'si') {
-                timerBox.innerText = `${dict['si'].qrExpireSub} ${timeLeft} යි`;
+            if (type === 'pair') {
+                pairBtn.classList.add('active');
+                qrBtn.classList.remove('active');
+                pairView.style.display = 'block';
+                qrView.style.display = 'none';
             } else {
-                timerBox.innerText = `${dict['en'].qrExpireSub} ${timeLeft}s`;
+                qrBtn.classList.add('active');
+                pairBtn.classList.remove('active');
+                qrView.style.display = 'block';
+                pairView.style.display = 'none';
             }
         }
 
-        updateTimerText();
+        // FLOATING THEME CONTROL
+        function toggleThemePanel() {
+            document.getElementById('themePanel').classList.toggle('open');
+        }
 
-        qrInterval = setInterval(() => {
-            timeLeft--;
-            updateTimerText();
+        function changeTheme(accentColor, glowColor, element) {
+            document.documentElement.style.setProperty('--primary-accent', accentColor);
+            document.documentElement.style.setProperty('--primary-glow', glowColor);
+            document.documentElement.style.setProperty('--border-color', accentColor + '26');
+            document.documentElement.style.setProperty('--card-hover', accentColor + '0d');
 
-            // පාට වෙනස් වීම
-            if (timeLeft <= 10 && timeLeft > 0) {
-                timerBox.style.color = '#f59e0b'; // අන්තිම තත්පර 10දී කහ පාට වෙනවා
-            } else if (timeLeft <= 0) {
-                clearInterval(qrInterval);
-                timerBox.style.color = '#ef4444'; // Expire වුණාම රතු පාටයි
-                timerBox.innerText = dict[currentLang].qrExpired;
-                // QR එක මැකෙන විදිහට ඕනෙනම් මෙතනින් හදන්න පුළුවන්
-                document.getElementById('qrcode').style.opacity = '0.3'; 
-            }
-        }, 1000);
-    }
+            document.querySelectorAll('.color-dot').forEach(dot => dot.classList.remove('active'));
+            element.classList.add('active');
+            localStorage.setItem('savedAccent', accentColor);
+            localStorage.setItem('savedGlow', glowColor);
+        }
 
-    // --- METHOD 2: GENERATE QR CODE ---
-    async function generateQR() {
-        const qrContainer = document.getElementById('qrcode');
-        const spinner = document.getElementById('qrSpinner');
-        const refreshBtn = document.getElementById('qrRefreshBtn');
-        const statusBox = document.getElementById('status');
-        const timerBox = document.getElementById('qrTimer');
-
-        clearInterval(qrInterval);
-        timerBox.style.display = "none";
-        qrContainer.style.opacity = '1';
-
-        qrContainer.innerHTML = "";
-        qrContainer.appendChild(spinner);
-        spinner.style.display = "block";
-        refreshBtn.disabled = true;
-        statusBox.style.display = "none";
-
-        try {
-            const response = await fetch('/qr');
-            const data = await response.json();
-
-            if (data.qr) {
-                spinner.style.display = "none";
+        // RESTORE THEME ON LOAD IF PRESENT
+        window.onload = () => {
+            const savedAccent = localStorage.getItem('savedAccent');
+            const savedGlow = localStorage.getItem('savedGlow');
+            if(savedAccent && savedGlow) {
+                document.documentElement.style.setProperty('--primary-accent', savedAccent);
+                document.documentElement.style.setProperty('--primary-glow', savedGlow);
+                document.documentElement.style.setProperty('--border-color', savedAccent + '26');
+                document.documentElement.style.setProperty('--card-hover', savedAccent + '0d');
                 
-                new QRCode(qrContainer, {
-                    text: data.qr,
-                    width: 200,
-                    height: 200,
-                    colorDark : "#0f172a",
-                    colorLight : "#ffffff",
-                    correctLevel : QRCode.CorrectLevel.H
+                // Active status in panel dot
+                document.querySelectorAll('.color-dot').forEach(dot => {
+                    if(dot.style.background.includes(savedAccent)) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
                 });
-
-                refreshBtn.disabled = false;
-                statusBox.innerText = dict[currentLang].statusQR;
-                statusBox.style.color = "#38bdf8";
-                statusBox.style.background = "rgba(56, 189, 248, 0.1)";
-                statusBox.style.display = "block";
-
-                // QR එක ආපු ගමන් Timer එක පටන් ගන්නවා
-                startTimer();
-
-            } else {
-                qrContainer.innerHTML = "<span style='color:#ef4444; font-size:14px; font-weight:600;'>Failed to get QR. Try again.</span>";
-                refreshBtn.disabled = false;
             }
-        } catch (err) {
-            qrContainer.innerHTML = "<span style='color:#ef4444; font-size:14px; font-weight:600;'>Server Error.</span>";
-            refreshBtn.disabled = false;
-        }
-    }
-</script>
+        };
 
+        // REQUEST PAIRING CODE FROM BACKEND
+        async function getPairingCode() {
+            const phoneInput = document.getElementById('phone').value.trim();
+            const pairSubmitBtn = document.getElementById('pairSubmitBtn');
+            const pairCodeBox = document.getElementById('pairCodeBox');
+            const pairSpinner = document.getElementById('pairSpinner');
+            const pairCodeDisplay = document.getElementById('pairCodeDisplay');
+            const pairStatus = document.getElementById('pairStatus');
+
+            if (!phoneInput) return alert('Please enter a phone number!');
+
+            pairSubmitBtn.disabled = true;
+            pairCodeBox.style.display = 'flex';
+            pairSpinner.style.display = 'block';
+            pairCodeDisplay.style.display = 'none';
+            pairStatus.style.display = 'none';
+
+            try {
+                const res = await fetch('/pair', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ phone: phoneInput })
+                });
+                const data = await res.json();
+
+                pairSpinner.style.display = 'none';
+                if (data.code) {
+                    pairCodeDisplay.innerText = data.code;
+                    pairCodeDisplay.style.display = 'block';
+                    pairStatus.innerText = dict[currentLang].pairStatusOpen;
+                    pairStatus.style.color = '#10b981';
+                    pairStatus.style.background = 'rgba(16, 185, 129, 0.1)';
+                    pairStatus.style.display = 'inline-block';
+                } else {
+                    pairCodeDisplay.innerText = "ERROR";
+                    pairCodeDisplay.style.display = 'block';
+                }
+            } catch (err) {
+                pairSpinner.style.display = 'none';
+                pairCodeDisplay.innerText = "FAILED";
+                pairCodeDisplay.style.display = 'block';
+            } finally {
+                pairSubmitBtn.disabled = false;
+            }
+        }
+
+        // REQUEST QR CODE FROM BACKEND
+        async function getQRCode() {
+            const qrSubmitBtn = document.getElementById('qrSubmitBtn');
+            const qrContainerWrapper = document.getElementById('qrContainerWrapper');
+            const qrSpinner = document.getElementById('qrSpinner');
+            const qrContainer = document.getElementById('qrContainer');
+            const qrTimer = document.getElementById('qrTimer');
+            const qrStatus = document.getElementById('qrStatus');
+
+            qrSubmitBtn.disabled = true;
+            qrContainerWrapper.style.display = 'flex';
+            qrSpinner.style.display = 'block';
+            qrContainer.innerHTML = '';
+            qrStatus.style.display = 'none';
+            qrTimer.style.display = 'none';
+            clearInterval(countdownTimer);
+
+            try {
+                const res = await fetch('/qr');
+                const data = await res.json();
+                qrSpinner.style.display = 'none';
+
+                if (data.qr) {
+                    new QRCode(qrContainer, {
+                        text: data.qr,
+                        width: 200,
+                        height: 200,
+                        colorDark : "#0f172a",
+                        colorLight : "#ffffff",
+                        correctLevel : QRCode.CorrectLevel.H
+                    });
+
+                    qrStatus.innerText = dict[currentLang].qrStatusWaiting;
+                    qrStatus.style.color = 'var(--primary-accent)';
+                    qrStatus.style.background = 'var(--card-hover)';
+                    qrStatus.style.display = 'inline-block';
+                    
+                    qrTimer.style.display = 'inline-block';
+                    startTimer(30);
+                } else {
+                    qrContainer.innerHTML = "<span style='color:#f43f5e;'>Failed to get QR.</span>";
+                }
+            } catch (err) {
+                qrSpinner.style.display = 'none';
+                qrContainer.innerHTML = "<span style='color:#f43f5e;'>Server Error.</span>";
+            } finally {
+                qrSubmitBtn.disabled = false;
+            }
+        }
+
+        // COUNTDOWN TIMER FOR QR
+        function startTimer(seconds) {
+            const qrTimer = document.getElementById('qrTimer');
+            let timeLeft = seconds;
+            countdownTimer = setInterval(() => {
+                timeLeft--;
+                let mins = Math.floor(timeLeft / 60);
+                let secs = timeLeft % 60;
+                qrTimer.innerText = `${dict[currentLang].timerText}${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdownTimer);
+                    document.getElementById('qrContainer').innerHTML = "<span style='color:#f43f5e;'>QR Expired. Request a new one.</span>";
+                    qrTimer.style.display = 'none';
+                }
+            }, 1000);
+        }
+
+        // COPY TO CLIPBOARD
+        function copyPairCode() {
+            const code = document.getElementById('pairCodeDisplay').innerText;
+            if(code && code !== '--------' && code !== 'ERROR' && code !== 'FAILED') {
+                navigator.clipboard.writeText(code);
+                alert(dict[currentLang].copySuccess);
+            }
+        }
+    </script>
 </body>
 </html>
