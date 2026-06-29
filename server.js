@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.static('public')); // Frontend folder
 
 // ==========================================
-// 1. PAIRING CODE ENDPOINT
+// 1. PAIRING CODE ENDPOINT 
 // ==========================================
 app.post('/pair', async (req, res) => {
     let phoneNumber = req.body.phone;
@@ -115,7 +115,7 @@ app.post('/pair', async (req, res) => {
 });
 
 // ==========================================
-// 2. QR CODE ENDPOINT (FIXED)
+// 2. QR CODE ENDPOINT (FIXED LOGGING ERROR)
 // ==========================================
 app.get('/qr', async (req, res) => {
     const uniqueId = Math.random().toString(36).substring(7);
@@ -125,13 +125,12 @@ app.get('/qr', async (req, res) => {
         const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
         let isQrSent = false;
 
-        // Socket එක function එකක් ඇතුළට ගත්තා (Reconnect කරන්න ලේසි වෙන්න)
         async function startQRConnection() {
             const sock = makeWASocket({
                 auth: state,
                 printQRInTerminal: false,
                 logger: pino({ level: "silent" }),
-                browser: ["Mac OS", "Safari", "14.0.0"]
+                browser: ["Ubuntu", "Chrome", "20.0.04"]
             });
 
             sock.ev.on('creds.update', saveCreds);
@@ -184,10 +183,11 @@ app.get('/qr', async (req, res) => {
                     const reason = lastDisconnect?.error?.output?.statusCode;
                     const shouldReconnect = reason !== DisconnectReason.loggedOut;
                     
-                    // මෙන්න මෙතන තමයි මැජික් එක තියෙන්නේ. Disconnect වුණොත් ආයෙත් function එක call කරනවා.
                     if (shouldReconnect) {
-                        console.log("[INFO] Connection dropped during QR login. Reconnecting...");
-                        startQRConnection(); 
+                        console.log("[INFO] Connection dropped during QR login. Reconnecting in 3 seconds...");
+                        setTimeout(() => {
+                            startQRConnection(); 
+                        }, 3000);
                     } else {
                         fs.removeSync(sessionDir);
                     }
@@ -195,7 +195,6 @@ app.get('/qr', async (req, res) => {
             });
         }
 
-        // පළවෙනි පාරට function එක Call කරනවා
         startQRConnection();
 
     } catch (error) {
@@ -212,4 +211,3 @@ app.get('/qr', async (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`👑 BABIYA-MD Pair Site is running on port ${PORT}`);
 });
-
