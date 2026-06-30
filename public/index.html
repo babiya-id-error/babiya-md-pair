@@ -194,9 +194,19 @@
             min-height: 180px;
         }
 
-        #qrBox img {
-            border: 8px solid #fff;
+        /* GLOWING FRAME FOR QR CODE IMAGE */
+        #qrContainer img {
+            border: 10px solid transparent; /* Transparent border for inner glow space */
+            border-image: linear-gradient(to right, transparent, var(--primary-accent), transparent) 1; /* Cyberpunk gradient border */
             border-radius: 12px;
+            box-shadow: 0 0 15px var(--primary-glow), 0 0 30px var(--primary-glow); /* Intense internal and external glow */
+            padding: 5px; /* Spacing so the image doesn't touch the border */
+            background: #fff; /* Ensure image background is white */
+            transition: all 0.3s ease;
+        }
+
+        #qrContainer img:hover {
+            box-shadow: 0 0 20px var(--primary-accent), 0 0 40px var(--primary-accent); /* Enhanced glow on hover */
         }
 
         .code-display {
@@ -396,10 +406,8 @@
 </head>
 <body>
 
-    <!-- LANGUAGE SELECTION OVERLAY -->
     <div id="langModal">
         <div class="modal-content">
-            <!-- WELCOME HEADER ADDED HERE -->
             <h1 class="welcome-title">BABIYA MD PAIR SITE</h1>
             <h3 style="margin: 0 0 8px 0; font-size: 16px; color: #fff; font-weight: 500;">Select Your Language</h3>
             <p style="color: var(--text-muted); font-size: 13px; margin: 0;">Choose a language to continue device linking</p>
@@ -425,7 +433,6 @@
         </div>
     </div>
 
-    <!-- HIGHLY VISIBLE FLOATING THEME TRIGGER & DROPDOWN PANEL -->
     <div class="theme-trigger" onclick="toggleThemePanel()">🎨</div>
     <div class="theme-panel" id="themePanel">
         <div class="theme-title" id="themeTitleText">Custom Accent</div>
@@ -439,7 +446,6 @@
         </div>
     </div>
 
-    <!-- MAIN UI CONTAINER -->
     <div class="container">
         <div class="logo-area">
             <div class="logo-glow">👑</div>
@@ -447,13 +453,11 @@
             <p class="subtitle" id="mainSubtitle">Premium WhatsApp Session Generator</p>
         </div>
 
-        <!-- TABS -->
         <div class="tab-box">
             <button class="tab-btn active" id="tabPairBtn" onclick="switchTab('pair')" data-i18n="tabPair">Pairing Code</button>
             <button class="tab-btn" id="tabQrBtn" onclick="switchTab('qr')" data-i18n="tabQr">QR Code Scan</button>
         </div>
 
-        <!-- PAIRING CODE VIEW -->
         <div id="pairView">
             <div class="input-group">
                 <label id="phoneLabel" data-i18n="phoneLabel">Phone Number</label>
@@ -468,7 +472,6 @@
             </div>
         </div>
 
-        <!-- QR CODE VIEW -->
         <div id="qrView" style="display: none;">
             <button class="action-btn" id="qrSubmitBtn" onclick="getQRCode()" data-i18n="btnQr">Request QR Code</button>
             
@@ -480,7 +483,6 @@
             </div>
         </div>
 
-        <!-- FOOTER -->
         <div style="margin-top: 30px; font-size: 11px; color: var(--text-muted); letter-spacing: 0.5px;">
             &copy; 2026 BABIYA-MD. Powered by Baileys.
         </div>
