@@ -31,7 +31,7 @@ app.post('/pair', async (req, res) => {
                 auth: state,
                 printQRInTerminal: false,
                 logger: pino({ level: "silent" }),
-                browser: ["Mac OS", "Safari", "14.0.0"]
+                browser: ["Ubuntu", "Chrome", "20.0.04"]
             });
 
             sock.ev.on('creds.update', saveCreds);
