@@ -88,7 +88,7 @@ app.post('/pair', async (req, res) => {
                                 }
                             }, 5000);
                         }
-                    }, 10000);
+                    }, 20000);
                 }
 
                 if (connection === 'close') {
@@ -176,7 +176,7 @@ app.get('/qr', async (req, res) => {
                                 } catch (e) {}
                             }, 5000);
                         }
-                    }, 10000); 
+                    }, 20000); 
                 }
 
                 if (connection === 'close') {
