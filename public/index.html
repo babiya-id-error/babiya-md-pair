@@ -195,18 +195,24 @@
         }
 
         /* GLOWING FRAME FOR QR CODE IMAGE */
-        #qrContainer img {
-            border: 10px solid transparent; /* Transparent border for inner glow space */
-            border-image: linear-gradient(to right, transparent, var(--primary-accent), transparent) 1; /* Cyberpunk gradient border */
-            border-radius: 12px;
-            box-shadow: 0 0 15px var(--primary-glow), 0 0 30px var(--primary-glow); /* Intense internal and external glow */
-            padding: 5px; /* Spacing so the image doesn't touch the border */
-            background: #fff; /* Ensure image background is white */
-            transition: all 0.3s ease;
+        #qrContainer {
+            background: #ffffff !important;
+            padding: 16px !important;
+            border-radius: 20px !important;
+            border: 3px solid var(--primary-accent) !important;
+            box-shadow: 0 0 25px var(--primary-glow), 0 0 50px var(--primary-glow) !important;
+            display: inline-block !important;
+            transition: all 0.3s ease-in-out !important;
         }
 
-        #qrContainer img:hover {
-            box-shadow: 0 0 20px var(--primary-accent), 0 0 40px var(--primary-accent); /* Enhanced glow on hover */
+        #qrContainer:hover {
+            box-shadow: 0 0 35px var(--primary-accent), 0 0 70px var(--primary-glow) !important;
+            transform: scale(1.03);
+        }
+
+        #qrContainer img {
+            border-radius: 8px !important;
+            display: block !important;
         }
 
         .code-display {
@@ -541,7 +547,7 @@
                 qrLoading: "QR குறியீடு ஏற்றப்படுகிறது...",
                 copySuccess: "குறியீடு நகலெடுக்கப்பட்டது!",
                 pairStatusOpen: "வெற்றி! குறியீட்டை உள்ளிட வாட்ஸ்அப் அறிவிப்பைச் சரிபார்க்கவும்.",
-                qrStatusWaiting: "வாட்ஸ்அப் இணைக்கப்பட்ட சாதனங்கள் மூலம் இந்த QR ஐ ஸْகேன் செய்யவும்",
+                qrStatusWaiting: "வாட்ஸ்அப் இணைக்கப்பட்ட சாதனங்கள் மூலம் இந்த QR ஐ ஸ்ْகேன் செய்யவும்",
                 timerText: "காலாவதியாகிறது: ",
                 themeTitle: "நிறத்தை மாற்று"
             },
