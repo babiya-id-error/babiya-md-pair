@@ -115,17 +115,28 @@ app.post('/pair', async (req, res) => {
 });
 
 // ==========================================
-// 2. QR CODE ENDPOINT (FIXED LOGGING ERROR)
+// 2. QR CODE ENDPOINT (FIXED LOGGING & LOOP)
 // ==========================================
 app.get('/qr', async (req, res) => {
     const uniqueId = Math.random().toString(36).substring(7);
     const sessionDir = path.join(__dirname, `session_qr_${uniqueId}`);
+    let isQrSent = false;
+    let qrTimeout;
 
     try {
         const { state, saveCreds } = await useMultiFileAuthState(sessionDir);
-        let isQrSent = false;
+
+        // Max 2 minutes lifetime for QR scanning to avoid ghost connections
+        qrTimeout = setTimeout(() => {
+            console.log(`[QR TIMEOUT] QR session expired or abandoned for ${uniqueId}. Cleaning up...`);
+            try {
+                fs.removeSync(sessionDir);
+            } catch (e) {}
+        }, 120000);
 
         async function startQRConnection() {
+            if (!fs.existsSync(sessionDir)) return; // Stop if session was cleaned up by timeout
+
             const sock = makeWASocket({
                 auth: state,
                 printQRInTerminal: false,
@@ -146,7 +157,8 @@ app.get('/qr', async (req, res) => {
                 }
 
                 if (connection === 'open') {
-                    console.log(`[QR SUCCESS] Connected successfully via QR Code. Waiting 10 seconds for keys to settle...`);
+                    console.log(`[QR SUCCESS] Connected successfully via QR Code. Waiting 20 seconds for keys to settle...`);
+                    if (qrTimeout) clearTimeout(qrTimeout);
 
                     setTimeout(async () => {
                         const credsPath = path.join(sessionDir, 'creds.json');
@@ -181,7 +193,8 @@ app.get('/qr', async (req, res) => {
 
                 if (connection === 'close') {
                     const reason = lastDisconnect?.error?.output?.statusCode;
-                    const shouldReconnect = reason !== DisconnectReason.loggedOut;
+                    // Reconnect only if not logged out AND session directory still exists
+                    const shouldReconnect = reason !== DisconnectReason.loggedOut && fs.existsSync(sessionDir);
                     
                     if (shouldReconnect) {
                         console.log("[INFO] Connection dropped during QR login. Reconnecting in 3 seconds...");
@@ -189,7 +202,10 @@ app.get('/qr', async (req, res) => {
                             startQRConnection(); 
                         }, 3000);
                     } else {
-                        fs.removeSync(sessionDir);
+                        if (qrTimeout) clearTimeout(qrTimeout);
+                        try {
+                            fs.removeSync(sessionDir);
+                        } catch (e) {}
                     }
                 }
             });
@@ -199,6 +215,7 @@ app.get('/qr', async (req, res) => {
 
     } catch (error) {
         console.error("QR Process Error:", error);
+        if (qrTimeout) clearTimeout(qrTimeout);
         if (!res.headersSent) {
             res.status(500).json({ error: "Internal Server Error" });
         }
